@@ -1,16 +1,1176 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Texo Math</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OSINT HUB</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1318;
+    --bg3: #141a22;
+    --border: #1e3a4a;
+    --border2: #0f6e8a;
+    --accent: #00d4ff;
+    --accent2: #00ff88;
+    --accent3: #ff6b35;
+    --text: #c8dde8;
+    --text2: #6a8fa0;
+    --text3: #3a5a6a;
+    --red: #ff3b3b;
+    --yellow: #ffd700;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scan line overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 212, 255, 0.012) 2px,
+      rgba(0, 212, 255, 0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Grid background */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,12,15,0.95);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    animation: pulse-border 2s ease-in-out infinite;
+  }
+
+  .logo-icon::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--accent2);
+    animation: spin 4s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse-border {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
+    50% { box-shadow: 0 0 0 6px rgba(0,212,255,0); }
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 4px;
+  }
+
+  .logo-sub {
+    font-size: 0.65rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text2);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--accent2);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  nav a {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text2);
+    text-decoration: none;
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--accent);
+    border-color: var(--border2);
+    background: rgba(0,212,255,0.05);
+  }
+
+  /* MAIN */
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* PAGE TITLE */
+  .page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .page-header h1 {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+  }
+
+  .page-header h2 {
+    font-family: var(--sans);
+    font-size: 2rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+
+  /* LOOKUP TOOL */
+  .lookup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .lookup-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .lookup-card:hover { border-color: var(--border2); }
+
+  .lookup-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+
+  .lookup-card.ip::before { background: var(--accent); }
+  .lookup-card.domain::before { background: var(--accent2); }
+  .lookup-card.email::before { background: var(--accent3); }
+  .lookup-card.phone::before { background: var(--yellow); }
+  .lookup-card.user::before { background: #b57bee; }
+  .lookup-card.hash::before { background: var(--red); }
+
+  .lookup-card h3 {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lookup-card h3 span {
+    padding: 2px 8px;
+    font-size: 0.6rem;
+    border: 1px solid;
+  }
+
+  .lookup-card.ip h3 span { color: var(--accent); border-color: var(--accent); }
+  .lookup-card.domain h3 span { color: var(--accent2); border-color: var(--accent2); }
+  .lookup-card.email h3 span { color: var(--accent3); border-color: var(--accent3); }
+  .lookup-card.phone h3 span { color: var(--yellow); border-color: var(--yellow); }
+  .lookup-card.user h3 span { color: #b57bee; border-color: #b57bee; }
+  .lookup-card.hash h3 span { color: var(--red); border-color: var(--red); }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input-row input:focus { border-color: var(--border2); }
+  .input-row input::placeholder { color: var(--text3); }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    padding: 10px 16px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  .btn:hover {
+    background: rgba(0,212,255,0.08);
+    box-shadow: 0 0 10px rgba(0,212,255,0.15);
+  }
+
+  .btn.green { border-color: var(--accent2); color: var(--accent2); }
+  .btn.green:hover { background: rgba(0,255,136,0.08); box-shadow: 0 0 10px rgba(0,255,136,0.15); }
+
+  .tool-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .tool-link {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text2);
+    text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tool-link:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .tool-link::before { content: '→ '; }
+
+  /* RESULT BOX */
+  .result-box {
+    margin-top: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent2);
+    display: none;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .result-box.visible { display: block; }
+
+  /* RESOURCES */
+  .res-cats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .res-cat-btn {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .res-cat-btn:hover, .res-cat-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+
+  .resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+
+  .res-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    position: relative;
+  }
+
+  .res-card:hover {
+    border-color: var(--border2);
+    background: var(--bg3);
+    transform: translateY(-2px);
+  }
+
+  .res-card-tag {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid;
+  }
+
+  .res-card-tag.search { color: var(--accent); border-color: var(--accent); }
+  .res-card-tag.network { color: var(--accent2); border-color: var(--accent2); }
+  .res-card-tag.social { color: #b57bee; border-color: #b57bee; }
+  .res-card-tag.breach { color: var(--red); border-color: var(--red); }
+  .res-card-tag.geo { color: var(--accent3); border-color: var(--accent3); }
+  .res-card-tag.crypto { color: var(--yellow); border-color: var(--yellow); }
+  .res-card-tag.darkweb { color: var(--text2); border-color: var(--text2); }
+
+  .res-card h4 {
+    font-family: var(--sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.3rem;
+  }
+
+  .res-card p {
+    font-size: 0.82rem;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+
+  .res-card .ext-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text3);
+  }
+
+  /* DASHBOARD */
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card:nth-child(1)::after { background: var(--accent); }
+  .stat-card:nth-child(2)::after { background: var(--accent2); }
+  .stat-card:nth-child(3)::after { background: var(--accent3); }
+  .stat-card:nth-child(4)::after { background: #b57bee; }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    color: #fff;
+    font-weight: 400;
+  }
+
+  .stat-sub {
+    font-size: 0.72rem;
+    color: var(--text3);
+    margin-top: 0.3rem;
+    font-family: var(--mono);
+  }
+
+  .activity-log {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+  }
+
+  .activity-log h3 {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .log-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+  }
+
+  .log-entry:last-child { border-bottom: none; }
+
+  .log-time {
+    color: var(--text3);
+    white-space: nowrap;
+    min-width: 80px;
+  }
+
+  .log-type {
+    padding: 2px 8px;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .log-type.info { background: rgba(0,212,255,0.1); color: var(--accent); }
+  .log-type.ok { background: rgba(0,255,136,0.1); color: var(--accent2); }
+  .log-type.warn { background: rgba(255,107,53,0.1); color: var(--accent3); }
+
+  .log-msg { color: var(--text); }
+
+  /* NOTES */
+  .notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1.5rem;
+  }
+
+  .note-sidebar {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+  }
+
+  .note-sidebar h3 {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .note-item {
+    padding: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .note-item:hover, .note-item.active {
+    border-color: var(--border2);
+    background: var(--bg3);
+  }
+
+  .note-item-title {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .note-item-date {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text3);
+  }
+
+  .note-editor {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .note-editor input, .note-editor textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .note-editor input { font-size: 0.9rem; }
+
+  .note-editor textarea {
+    min-height: 300px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+
+  .note-editor input:focus, .note-editor textarea:focus { border-color: var(--border2); }
+
+  .note-actions { display: flex; gap: 8px; }
+
+  /* TERMINAL */
+  .terminal {
+    background: #050708;
+    border: 1px solid var(--border);
+    padding: 1.2rem;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    min-height: 200px;
+    margin-bottom: 1rem;
+  }
+
+  .term-line {
+    color: var(--accent2);
+    line-height: 1.8;
+  }
+
+  .term-line.err { color: var(--red); }
+  .term-line.info { color: var(--accent); }
+  .term-line.prompt { color: var(--text2); }
+
+  /* QUICK ACCESS PANEL */
+  .quick-access {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .qa-btn {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+    font-family: var(--sans);
+    text-decoration: none;
+    display: block;
+  }
+
+  .qa-btn:hover {
+    border-color: var(--border2);
+    background: var(--bg3);
+  }
+
+  .qa-icon {
+    font-family: var(--mono);
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .qa-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.2rem;
+  }
+
+  .qa-desc {
+    font-size: 0.72rem;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+
+  /* FADE IN */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section.active { animation: fadeIn 0.3s ease; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .lookup-grid { grid-template-columns: 1fr; }
+    .dash-grid { grid-template-columns: repeat(2, 1fr); }
+    .notes-grid { grid-template-columns: 1fr; }
+    header { flex-wrap: wrap; gap: 10px; }
+    nav { flex-wrap: wrap; }
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); }
+</style>
 </head>
 <body>
-<iframe
-    src="https://www.chatbase.co/chatbot-iframe/IXPKhcJLe6kaD3m5WoZNJ"
-    width="100%"
-    style="height: 100%; min-height: 700px"
-    frameborder="0"
-></iframe>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon"></div>
+    <div>
+      <div class="logo-text">OSINT HUB</div>
+      <div class="logo-sub">Intelligence Platform v1.0</div>
+    </div>
+  </div>
+  <nav>
+    <a href="#" class="active" onclick="showSection('dashboard',this)">Dashboard</a>
+    <a href="#" onclick="showSection('lookup',this)">Lookup</a>
+    <a href="#" onclick="showSection('resources',this)">Ressources</a>
+    <a href="#" onclick="showSection('notes',this)">Notes</a>
+  </nav>
+  <div class="status-bar">
+    <span><span class="status-dot"></span>ONLINE</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" class="section active">
+    <div class="page-header">
+      <h1>// Section 01</h1>
+      <h2>Dashboard</h2>
+    </div>
+
+    <div class="dash-grid">
+      <div class="stat-card">
+        <div class="stat-label">Ressources</div>
+        <div class="stat-value">24</div>
+        <div class="stat-sub">outils référencés</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Catégories</div>
+        <div class="stat-value">7</div>
+        <div class="stat-sub">domaines couverts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Lookup types</div>
+        <div class="stat-value">6</div>
+        <div class="stat-sub">IP, domaine, email...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Notes</div>
+        <div class="stat-value" id="notes-count">0</div>
+        <div class="stat-sub">investigations</div>
+      </div>
+    </div>
+
+    <div class="page-header" style="margin-top:1.5rem">
+      <h2 style="font-size:1.1rem">Accès rapide</h2>
+    </div>
+
+    <div class="quick-access">
+      <a class="qa-btn" href="#" onclick="showSection('lookup',null);document.querySelector('nav a:nth-child(2)').classList.add('active');document.querySelector('nav a:nth-child(1)').classList.remove('active')">
+        <div class="qa-icon">[IP]</div>
+        <div class="qa-title">IP Lookup</div>
+        <div class="qa-desc">Géoloc, ASN, proxy</div>
+      </a>
+      <a class="qa-btn" href="https://whois.domaintools.com" target="_blank">
+        <div class="qa-icon">[WH]</div>
+        <div class="qa-title">WHOIS</div>
+        <div class="qa-desc">Infos domaine</div>
+      </a>
+      <a class="qa-btn" href="https://haveibeenpwned.com" target="_blank">
+        <div class="qa-icon">[BR]</div>
+        <div class="qa-title">HaveIBeenPwned</div>
+        <div class="qa-desc">Vérif. fuites</div>
+      </a>
+      <a class="qa-btn" href="https://www.shodan.io" target="_blank">
+        <div class="qa-icon">[SH]</div>
+        <div class="qa-title">Shodan</div>
+        <div class="qa-desc">Moteur IoT</div>
+      </a>
+      <a class="qa-btn" href="https://censys.io" target="_blank">
+        <div class="qa-icon">[CE]</div>
+        <div class="qa-title">Censys</div>
+        <div class="qa-desc">Scan internet</div>
+      </a>
+      <a class="qa-btn" href="https://web.archive.org" target="_blank">
+        <div class="qa-icon">[WB]</div>
+        <div class="qa-title">Wayback Machine</div>
+        <div class="qa-desc">Archives web</div>
+      </a>
+    </div>
+
+    <div class="activity-log">
+      <h3>// Journal de session</h3>
+      <div class="log-entry">
+        <span class="log-time" id="log-time-1">--:--</span>
+        <span class="log-type info">INIT</span>
+        <span class="log-msg">Plateforme chargée. Bienvenue sur OSINT HUB.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time" id="log-time-2">--:--</span>
+        <span class="log-type ok">OK</span>
+        <span class="log-msg">24 ressources indexées. 6 modules de lookup disponibles.</span>
+      </div>
+      <div class="log-entry">
+        <span class="log-time" id="log-time-3">--:--</span>
+        <span class="log-type warn">INFO</span>
+        <span class="log-msg">Session locale. Aucune donnée transmise à des serveurs tiers.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOOKUP -->
+  <section id="lookup" class="section">
+    <div class="page-header">
+      <h1>// Section 02</h1>
+      <h2>Outils de Lookup</h2>
+    </div>
+
+    <div class="lookup-grid">
+
+      <!-- IP -->
+      <div class="lookup-card ip">
+        <h3><span>IP</span> Adresse IP</h3>
+        <div class="input-row">
+          <input type="text" id="ip-input" placeholder="ex: 8.8.8.8" />
+          <button class="btn" onclick="lookupIP()">Analyser</button>
+        </div>
+        <div class="result-box" id="ip-result"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://ipinfo.io" target="_blank">IPInfo</a>
+          <a class="tool-link" href="https://www.abuseipdb.com" target="_blank">AbuseIPDB</a>
+          <a class="tool-link" href="https://shodan.io" target="_blank">Shodan</a>
+          <a class="tool-link" href="https://viz.greynoise.io" target="_blank">GreyNoise</a>
+        </div>
+      </div>
+
+      <!-- DOMAIN -->
+      <div class="lookup-card domain">
+        <h3><span>DOMAIN</span> Nom de domaine</h3>
+        <div class="input-row">
+          <input type="text" id="domain-input" placeholder="ex: example.com" />
+          <button class="btn green" onclick="lookupDomain()">Analyser</button>
+        </div>
+        <div class="result-box" id="domain-result" style="border-left-color: var(--accent2)"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://whois.domaintools.com" target="_blank">WHOIS</a>
+          <a class="tool-link" href="https://dnsdumpster.com" target="_blank">DNSDumpster</a>
+          <a class="tool-link" href="https://crt.sh" target="_blank">crt.sh</a>
+          <a class="tool-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
+        </div>
+      </div>
+
+      <!-- EMAIL -->
+      <div class="lookup-card email">
+        <h3><span>EMAIL</span> Adresse email</h3>
+        <div class="input-row">
+          <input type="text" id="email-input" placeholder="ex: user@domain.com" />
+          <button class="btn" style="border-color:var(--accent3);color:var(--accent3)" onclick="lookupEmail()">Analyser</button>
+        </div>
+        <div class="result-box" id="email-result" style="border-left-color:var(--accent3)"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://haveibeenpwned.com" target="_blank">HaveIBeenPwned</a>
+          <a class="tool-link" href="https://hunter.io" target="_blank">Hunter.io</a>
+          <a class="tool-link" href="https://epieos.com" target="_blank">Epieos</a>
+        </div>
+      </div>
+
+      <!-- PHONE -->
+      <div class="lookup-card phone">
+        <h3><span>PHONE</span> Numéro de téléphone</h3>
+        <div class="input-row">
+          <input type="text" id="phone-input" placeholder="ex: +33612345678" />
+          <button class="btn" style="border-color:var(--yellow);color:var(--yellow)" onclick="lookupPhone()">Analyser</button>
+        </div>
+        <div class="result-box" id="phone-result" style="border-left-color:var(--yellow)"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://www.truecaller.com" target="_blank">Truecaller</a>
+          <a class="tool-link" href="https://www.phoneinfoga.com" target="_blank">PhoneInfoga</a>
+          <a class="tool-link" href="https://sync.me" target="_blank">Sync.me</a>
+        </div>
+      </div>
+
+      <!-- USERNAME -->
+      <div class="lookup-card user">
+        <h3><span>USER</span> Pseudonyme / Username</h3>
+        <div class="input-row">
+          <input type="text" id="user-input" placeholder="ex: john_doe" />
+          <button class="btn" style="border-color:#b57bee;color:#b57bee" onclick="lookupUser()">Analyser</button>
+        </div>
+        <div class="result-box" id="user-result" style="border-left-color:#b57bee"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://sherlock-project.github.io" target="_blank">Sherlock</a>
+          <a class="tool-link" href="https://whatsmyname.app" target="_blank">WhatsMyName</a>
+          <a class="tool-link" href="https://namechk.com" target="_blank">Namechk</a>
+          <a class="tool-link" href="https://usersearch.org" target="_blank">UserSearch</a>
+        </div>
+      </div>
+
+      <!-- HASH -->
+      <div class="lookup-card hash">
+        <h3><span>HASH</span> Hash / Empreinte</h3>
+        <div class="input-row">
+          <input type="text" id="hash-input" placeholder="MD5, SHA1, SHA256..." />
+          <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="lookupHash()">Analyser</button>
+        </div>
+        <div class="result-box" id="hash-result" style="border-left-color:var(--red)"></div>
+        <div class="tool-links">
+          <a class="tool-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
+          <a class="tool-link" href="https://crackstation.net" target="_blank">CrackStation</a>
+          <a class="tool-link" href="https://md5hashing.net" target="_blank">MD5Hashing</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RESOURCES -->
+  <section id="resources" class="section">
+    <div class="page-header">
+      <h1>// Section 03</h1>
+      <h2>Ressources OSINT</h2>
+    </div>
+
+    <div class="res-cats">
+      <button class="res-cat-btn active" onclick="filterRes('all',this)">Tous</button>
+      <button class="res-cat-btn" onclick="filterRes('search',this)">Recherche</button>
+      <button class="res-cat-btn" onclick="filterRes('network',this)">Réseau</button>
+      <button class="res-cat-btn" onclick="filterRes('social',this)">Social</button>
+      <button class="res-cat-btn" onclick="filterRes('breach',this)">Fuites</button>
+      <button class="res-cat-btn" onclick="filterRes('geo',this)">Géoloc</button>
+      <button class="res-cat-btn" onclick="filterRes('crypto',this)">Crypto</button>
+      <button class="res-cat-btn" onclick="filterRes('darkweb',this)">Darkweb</button>
+    </div>
+
+    <div class="resources-grid" id="resources-grid"></div>
+  </section>
+
+  <!-- NOTES -->
+  <section id="notes" class="section">
+    <div class="page-header">
+      <h1>// Section 04</h1>
+      <h2>Notes d'investigation</h2>
+    </div>
+
+    <div class="notes-grid">
+      <div class="note-sidebar">
+        <h3>// Investigations</h3>
+        <button class="btn" style="width:100%;margin-bottom:1rem" onclick="newNote()">+ Nouvelle note</button>
+        <div id="notes-list"></div>
+      </div>
+      <div class="note-editor">
+        <input type="text" id="note-title" placeholder="Titre de l'investigation..." />
+        <textarea id="note-body" placeholder="Tes notes, IP trouvées, pseudos, liens... tout ce que tu veux documenter."></textarea>
+        <div class="note-actions">
+          <button class="btn green" onclick="saveNote()">Sauvegarder</button>
+          <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="deleteNote()">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// === CLOCK ===
+function updateClock() {
+  const now = new Date();
+  const t = now.toTimeString().slice(0,8);
+  document.getElementById('clock').textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Log times
+['log-time-1','log-time-2','log-time-3'].forEach(id => {
+  const now = new Date();
+  document.getElementById(id).textContent = now.toTimeString().slice(0,5);
+});
+
+// === NAV ===
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  if (el) el.classList.add('active');
+  return false;
+}
+
+// === LOOKUP ===
+function showResult(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add('visible');
+}
+
+function lookupIP() {
+  const val = document.getElementById('ip-input').value.trim();
+  if (!val) return;
+  showResult('ip-result', '→ Redirection vers les outils...\n\nIP analysée : ' + val + '\n\nUtilise les liens ci-dessous pour:\n- IPInfo.io : géolocalisation, ASN, ISP\n- AbuseIPDB : réputation, signalements\n- Shodan : ports ouverts, services\n- GreyNoise : bruit internet, scanner');
+  window.open('https://ipinfo.io/' + val, '_blank');
+}
+
+function lookupDomain() {
+  const val = document.getElementById('domain-input').value.trim();
+  if (!val) return;
+  showResult('domain-result', '→ Domaine : ' + val + '\n\nOutils recommandés :\n- WHOIS : registrant, dates, nameservers\n- DNSDumpster : subdomains, MX, DNS\n- crt.sh : certificats SSL (subdomains)\n- VirusTotal : réputation, malware');
+  window.open('https://whois.domaintools.com/' + val, '_blank');
+}
+
+function lookupEmail() {
+  const val = document.getElementById('email-input').value.trim();
+  if (!val) return;
+  showResult('email-result', '→ Email : ' + val + '\n\nOutils recommandés :\n- HaveIBeenPwned : fuites de données\n- Hunter.io : validation, employeur\n- Epieos : réseaux sociaux liés');
+  window.open('https://haveibeenpwned.com/account/' + val, '_blank');
+}
+
+function lookupPhone() {
+  const val = document.getElementById('phone-input').value.trim();
+  if (!val) return;
+  showResult('phone-result', '→ Numéro : ' + val + '\n\nOutils recommandés :\n- Truecaller : identité associée\n- PhoneInfoga : format, pays, opérateur\n- Sync.me : profil social');
+}
+
+function lookupUser() {
+  const val = document.getElementById('user-input').value.trim();
+  if (!val) return;
+  showResult('user-result', '→ Username : ' + val + '\n\nOutils recommandés :\n- Sherlock : 300+ plateformes\n- WhatsMyName : présence web\n- Namechk : disponibilité\n- UserSearch : profils sociaux');
+  window.open('https://whatsmyname.app/?q=' + val, '_blank');
+}
+
+function lookupHash() {
+  const val = document.getElementById('hash-input').value.trim();
+  if (!val) return;
+  const len = val.length;
+  let type = len === 32 ? 'MD5' : len === 40 ? 'SHA1' : len === 64 ? 'SHA256' : 'Inconnu';
+  showResult('hash-result', '→ Hash : ' + val + '\nType détecté : ' + type + '\n\nOutils :\n- VirusTotal : fichier/malware\n- CrackStation : décryptage (dicts)\n- MD5Hashing : reverse lookup');
+}
+
+// === RESOURCES DATA ===
+const resources = [
+  { name: 'Shodan', desc: 'Moteur de recherche pour appareils connectés, ports, services.', url: 'https://shodan.io', cat: 'network' },
+  { name: 'Censys', desc: 'Scanner internet masif, certificats, infrastructure.', url: 'https://censys.io', cat: 'network' },
+  { name: 'DNSDumpster', desc: 'Cartographie DNS, sous-domaines, MX records.', url: 'https://dnsdumpster.com', cat: 'network' },
+  { name: 'crt.sh', desc: 'Transparence des certificats SSL, découverte de subdomains.', url: 'https://crt.sh', cat: 'network' },
+  { name: 'Robtex', desc: 'DNS, IP, ASN, whois, graphe de réseau.', url: 'https://www.robtex.com', cat: 'network' },
+  { name: 'Google Dorks', desc: 'Opérateurs de recherche avancée Google pour OSINT.', url: 'https://www.exploit-db.com/google-hacking-database', cat: 'search' },
+  { name: 'Wayback Machine', desc: 'Archives de pages web, historique de sites.', url: 'https://web.archive.org', cat: 'search' },
+  { name: 'Yandex Images', desc: 'Recherche inversée d\'image, parfois meilleur que Google.', url: 'https://yandex.com/images', cat: 'search' },
+  { name: 'TinEye', desc: 'Recherche inversée d\'image, traçage de photos en ligne.', url: 'https://tineye.com', cat: 'search' },
+  { name: 'Maltego', desc: 'Outil de visualisation de liens entre entités OSINT.', url: 'https://maltego.com', cat: 'search' },
+  { name: 'WhatsMyName', desc: 'Recherche d\'username sur 300+ plateformes simultanément.', url: 'https://whatsmyname.app', cat: 'social' },
+  { name: 'Sherlock', desc: 'Outil CLI Python pour trouver des usernames sur les réseaux.', url: 'https://sherlock-project.github.io', cat: 'social' },
+  { name: 'Social Searcher', desc: 'Monitoring des réseaux sociaux, posts publics en temps réel.', url: 'https://www.social-searcher.com', cat: 'social' },
+  { name: 'Epieos', desc: 'Trouve les comptes liés à un email (Google, etc).', url: 'https://epieos.com', cat: 'social' },
+  { name: 'HaveIBeenPwned', desc: 'Vérification si un email apparaît dans des fuites de données.', url: 'https://haveibeenpwned.com', cat: 'breach' },
+  { name: 'Dehashed', desc: 'Moteur de recherche de bases de données leakées.', url: 'https://dehashed.com', cat: 'breach' },
+  { name: 'IntelliGence X', desc: 'Archive de leaks, darkweb, pastes, et documents.', url: 'https://intelx.io', cat: 'breach' },
+  { name: 'SnusBase', desc: 'Recherche dans des bases de données volées/leakées.', url: 'https://snusbase.com', cat: 'breach' },
+  { name: 'Google Maps', desc: 'Vérification d\'adresses, Street View, géolocalisation.', url: 'https://maps.google.com', cat: 'geo' },
+  { name: 'SunCalc', desc: 'Calcul de la position du soleil pour dater des photos.', url: 'https://www.suncalc.org', cat: 'geo' },
+  { name: 'GeoGuessr', desc: 'Entraînement à la géolocalisation par image.', url: 'https://www.geoguessr.com', cat: 'geo' },
+  { name: 'Blockchain Explorer', desc: 'Analyse de transactions Bitcoin et autres cryptos.', url: 'https://www.blockchain.com/explorer', cat: 'crypto' },
+  { name: 'Etherscan', desc: 'Explorer Ethereum : wallets, tokens, smart contracts.', url: 'https://etherscan.io', cat: 'crypto' },
+  { name: 'Tor2Web', desc: 'Accès à des domaines .onion sans Tor (usage limité).', url: 'https://www.tor2web.org', cat: 'darkweb' },
+];
+
+function renderResources(filter) {
+  const grid = document.getElementById('resources-grid');
+  grid.innerHTML = '';
+  const filtered = filter === 'all' ? resources : resources.filter(r => r.cat === filter);
+  filtered.forEach(r => {
+    const el = document.createElement('a');
+    el.className = 'res-card';
+    el.href = r.url;
+    el.target = '_blank';
+    el.innerHTML = `
+      <span class="ext-icon">↗</span>
+      <span class="res-card-tag ${r.cat}">${r.cat}</span>
+      <h4>${r.name}</h4>
+      <p>${r.desc}</p>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+function filterRes(cat, btn) {
+  document.querySelectorAll('.res-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResources(cat);
+}
+
+renderResources('all');
+
+// === NOTES ===
+let notes = JSON.parse(localStorage.getItem('osint-notes') || '[]');
+let currentNote = null;
+
+function updateNotesCount() {
+  document.getElementById('notes-count').textContent = notes.length;
+}
+
+function renderNotesList() {
+  const list = document.getElementById('notes-list');
+  list.innerHTML = '';
+  if (notes.length === 0) {
+    list.innerHTML = '<p style="font-family:var(--mono);font-size:0.72rem;color:var(--text3);padding:8px 0">Aucune note. Crée ta première investigation.</p>';
+    return;
+  }
+  notes.forEach((n, i) => {
+    const el = document.createElement('div');
+    el.className = 'note-item' + (i === currentNote ? ' active' : '');
+    el.innerHTML = `<div class="note-item-title">${n.title || 'Sans titre'}</div><div class="note-item-date">${n.date}</div>`;
+    el.onclick = () => loadNote(i);
+    list.appendChild(el);
+  });
+  updateNotesCount();
+}
+
+function loadNote(i) {
+  currentNote = i;
+  document.getElementById('note-title').value = notes[i].title;
+  document.getElementById('note-body').value = notes[i].body;
+  renderNotesList();
+}
+
+function newNote() {
+  currentNote = null;
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-body').value = '';
+  document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
+}
+
+function saveNote() {
+  const title = document.getElementById('note-title').value.trim() || 'Sans titre';
+  const body = document.getElementById('note-body').value;
+  const now = new Date().toLocaleDateString('fr-FR');
+  if (currentNote !== null) {
+    notes[currentNote] = { title, body, date: now };
+  } else {
+    notes.unshift({ title, body, date: now });
+    currentNote = 0;
+  }
+  localStorage.setItem('osint-notes', JSON.stringify(notes));
+  renderNotesList();
+}
+
+function deleteNote() {
+  if (currentNote === null) return;
+  notes.splice(currentNote, 1);
+  localStorage.setItem('osint-notes', JSON.stringify(notes));
+  currentNote = null;
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-body').value = '';
+  renderNotesList();
+}
+
+renderNotesList();
+updateNotesCount();
+</script>
 </body>
 </html>
-
