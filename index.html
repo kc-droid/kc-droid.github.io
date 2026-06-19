@@ -1,1176 +1,1309 @@
+cat > /home/claude/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OSINT HUB</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0c0f;
-    --bg2: #0f1318;
-    --bg3: #141a22;
-    --border: #1e3a4a;
-    --border2: #0f6e8a;
-    --accent: #00d4ff;
-    --accent2: #00ff88;
-    --accent3: #ff6b35;
-    --text: #c8dde8;
-    --text2: #6a8fa0;
-    --text3: #3a5a6a;
-    --red: #ff3b3b;
-    --yellow: #ffd700;
-    --mono: 'Share Tech Mono', monospace;
-    --sans: 'Rajdhani', sans-serif;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Scan line overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 212, 255, 0.012) 2px,
-      rgba(0, 212, 255, 0.012) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }
-
-  /* Grid background */
-  body::after {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image:
-      linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* HEADER */
-  header {
-    position: relative;
-    z-index: 10;
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(10,12,15,0.95);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .logo-icon {
-    width: 36px;
-    height: 36px;
-    border: 1.5px solid var(--accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    animation: pulse-border 2s ease-in-out infinite;
-  }
-
-  .logo-icon::before {
-    content: '';
-    position: absolute;
-    width: 18px;
-    height: 18px;
-    border: 1.5px solid var(--accent2);
-    animation: spin 4s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes pulse-border {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,255,0.3); }
-    50% { box-shadow: 0 0 0 6px rgba(0,212,255,0); }
-  }
-
-  .logo-text {
-    font-family: var(--mono);
-    font-size: 1.3rem;
-    color: var(--accent);
-    letter-spacing: 4px;
-  }
-
-  .logo-sub {
-    font-size: 0.65rem;
-    color: var(--text2);
-    letter-spacing: 2px;
-    font-family: var(--mono);
-    text-transform: uppercase;
-  }
-
-  .status-bar {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--text2);
-  }
-
-  .status-dot {
-    width: 6px;
-    height: 6px;
-    background: var(--accent2);
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 6px;
-    animation: blink 1.5s ease-in-out infinite;
-  }
-
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
-
-  nav {
-    display: flex;
-    gap: 4px;
-  }
-
-  nav a {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--text2);
-    text-decoration: none;
-    padding: 6px 14px;
-    border: 1px solid transparent;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-    text-transform: uppercase;
-  }
-
-  nav a:hover, nav a.active {
-    color: var(--accent);
-    border-color: var(--border2);
-    background: rgba(0,212,255,0.05);
-  }
-
-  /* MAIN */
-  main {
-    position: relative;
-    z-index: 5;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-  }
-
-  /* SECTIONS */
-  .section { display: none; }
-  .section.active { display: block; }
-
-  /* PAGE TITLE */
-  .page-header {
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .page-header h1 {
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--accent);
-    letter-spacing: 3px;
-    margin-bottom: 0.4rem;
-    text-transform: uppercase;
-  }
-
-  .page-header h2 {
-    font-family: var(--sans);
-    font-size: 2rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 1px;
-  }
-
-  /* LOOKUP TOOL */
-  .lookup-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-  }
-
-  .lookup-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    position: relative;
-    transition: border-color 0.3s;
-  }
-
-  .lookup-card:hover { border-color: var(--border2); }
-
-  .lookup-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-  }
-
-  .lookup-card.ip::before { background: var(--accent); }
-  .lookup-card.domain::before { background: var(--accent2); }
-  .lookup-card.email::before { background: var(--accent3); }
-  .lookup-card.phone::before { background: var(--yellow); }
-  .lookup-card.user::before { background: #b57bee; }
-  .lookup-card.hash::before { background: var(--red); }
-
-  .lookup-card h3 {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    color: var(--text2);
-    margin-bottom: 1rem;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .lookup-card h3 span {
-    padding: 2px 8px;
-    font-size: 0.6rem;
-    border: 1px solid;
-  }
-
-  .lookup-card.ip h3 span { color: var(--accent); border-color: var(--accent); }
-  .lookup-card.domain h3 span { color: var(--accent2); border-color: var(--accent2); }
-  .lookup-card.email h3 span { color: var(--accent3); border-color: var(--accent3); }
-  .lookup-card.phone h3 span { color: var(--yellow); border-color: var(--yellow); }
-  .lookup-card.user h3 span { color: #b57bee; border-color: #b57bee; }
-  .lookup-card.hash h3 span { color: var(--red); border-color: var(--red); }
-
-  .input-row {
-    display: flex;
-    gap: 8px;
-  }
-
-  .input-row input {
-    flex: 1;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .input-row input:focus { border-color: var(--border2); }
-  .input-row input::placeholder { color: var(--text3); }
-
-  .btn {
-    background: transparent;
-    border: 1px solid var(--border2);
-    color: var(--accent);
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    padding: 10px 16px;
-    cursor: pointer;
-    letter-spacing: 1px;
-    transition: all 0.2s;
-    white-space: nowrap;
-    text-transform: uppercase;
-  }
-
-  .btn:hover {
-    background: rgba(0,212,255,0.08);
-    box-shadow: 0 0 10px rgba(0,212,255,0.15);
-  }
-
-  .btn.green { border-color: var(--accent2); color: var(--accent2); }
-  .btn.green:hover { background: rgba(0,255,136,0.08); box-shadow: 0 0 10px rgba(0,255,136,0.15); }
-
-  .tool-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-  }
-
-  .tool-link {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--text2);
-    text-decoration: none;
-    padding: 4px 10px;
-    border: 1px solid var(--border);
-    letter-spacing: 0.5px;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .tool-link:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .tool-link::before { content: '→ '; }
-
-  /* RESULT BOX */
-  .result-box {
-    margin-top: 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent2);
-    padding: 12px;
-    font-family: var(--mono);
-    font-size: 0.75rem;
-    color: var(--accent2);
-    display: none;
-    white-space: pre-wrap;
-    word-break: break-all;
-    max-height: 120px;
-    overflow-y: auto;
-  }
-
-  .result-box.visible { display: block; }
-
-  /* RESOURCES */
-  .res-cats {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-  }
-
-  .res-cat-btn {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text2);
-    cursor: pointer;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.2s;
-  }
-
-  .res-cat-btn:hover, .res-cat-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(0,212,255,0.05);
-  }
-
-  .resources-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
-  }
-
-  .res-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-    transition: all 0.2s;
-    cursor: pointer;
-    text-decoration: none;
-    display: block;
-    position: relative;
-  }
-
-  .res-card:hover {
-    border-color: var(--border2);
-    background: var(--bg3);
-    transform: translateY(-2px);
-  }
-
-  .res-card-tag {
-    font-family: var(--mono);
-    font-size: 0.6rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-    display: inline-block;
-    padding: 2px 8px;
-    border: 1px solid;
-  }
-
-  .res-card-tag.search { color: var(--accent); border-color: var(--accent); }
-  .res-card-tag.network { color: var(--accent2); border-color: var(--accent2); }
-  .res-card-tag.social { color: #b57bee; border-color: #b57bee; }
-  .res-card-tag.breach { color: var(--red); border-color: var(--red); }
-  .res-card-tag.geo { color: var(--accent3); border-color: var(--accent3); }
-  .res-card-tag.crypto { color: var(--yellow); border-color: var(--yellow); }
-  .res-card-tag.darkweb { color: var(--text2); border-color: var(--text2); }
-
-  .res-card h4 {
-    font-family: var(--sans);
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fff;
-    margin-bottom: 0.3rem;
-  }
-
-  .res-card p {
-    font-size: 0.82rem;
-    color: var(--text2);
-    line-height: 1.5;
-  }
-
-  .res-card .ext-icon {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--text3);
-  }
-
-  /* DASHBOARD */
-  .dash-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .stat-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2px;
-  }
-
-  .stat-card:nth-child(1)::after { background: var(--accent); }
-  .stat-card:nth-child(2)::after { background: var(--accent2); }
-  .stat-card:nth-child(3)::after { background: var(--accent3); }
-  .stat-card:nth-child(4)::after { background: #b57bee; }
-
-  .stat-label {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    color: var(--text2);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-  }
-
-  .stat-value {
-    font-family: var(--mono);
-    font-size: 1.8rem;
-    color: #fff;
-    font-weight: 400;
-  }
-
-  .stat-sub {
-    font-size: 0.72rem;
-    color: var(--text3);
-    margin-top: 0.3rem;
-    font-family: var(--mono);
-  }
-
-  .activity-log {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-  }
-
-  .activity-log h3 {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--text2);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-
-  .log-entry {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    font-family: var(--mono);
-    font-size: 0.75rem;
-  }
-
-  .log-entry:last-child { border-bottom: none; }
-
-  .log-time {
-    color: var(--text3);
-    white-space: nowrap;
-    min-width: 80px;
-  }
-
-  .log-type {
-    padding: 2px 8px;
-    font-size: 0.6rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    white-space: nowrap;
-  }
-
-  .log-type.info { background: rgba(0,212,255,0.1); color: var(--accent); }
-  .log-type.ok { background: rgba(0,255,136,0.1); color: var(--accent2); }
-  .log-type.warn { background: rgba(255,107,53,0.1); color: var(--accent3); }
-
-  .log-msg { color: var(--text); }
-
-  /* NOTES */
-  .notes-grid {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 1.5rem;
-  }
-
-  .note-sidebar {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-  }
-
-  .note-sidebar h3 {
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--text2);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
-  }
-
-  .note-item {
-    padding: 10px;
-    border: 1px solid var(--border);
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .note-item:hover, .note-item.active {
-    border-color: var(--border2);
-    background: var(--bg3);
-  }
-
-  .note-item-title {
-    font-family: var(--mono);
-    font-size: 0.78rem;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .note-item-date {
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    color: var(--text3);
-  }
-
-  .note-editor {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .note-editor input, .note-editor textarea {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color 0.2s;
-    width: 100%;
-  }
-
-  .note-editor input { font-size: 0.9rem; }
-
-  .note-editor textarea {
-    min-height: 300px;
-    resize: vertical;
-    line-height: 1.7;
-  }
-
-  .note-editor input:focus, .note-editor textarea:focus { border-color: var(--border2); }
-
-  .note-actions { display: flex; gap: 8px; }
-
-  /* TERMINAL */
-  .terminal {
-    background: #050708;
-    border: 1px solid var(--border);
-    padding: 1.2rem;
-    font-family: var(--mono);
-    font-size: 0.8rem;
-    min-height: 200px;
-    margin-bottom: 1rem;
-  }
-
-  .term-line {
-    color: var(--accent2);
-    line-height: 1.8;
-  }
-
-  .term-line.err { color: var(--red); }
-  .term-line.info { color: var(--accent); }
-  .term-line.prompt { color: var(--text2); }
-
-  /* QUICK ACCESS PANEL */
-  .quick-access {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .qa-btn {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: left;
-    color: var(--text);
-    font-family: var(--sans);
-    text-decoration: none;
-    display: block;
-  }
-
-  .qa-btn:hover {
-    border-color: var(--border2);
-    background: var(--bg3);
-  }
-
-  .qa-icon {
-    font-family: var(--mono);
-    font-size: 1.2rem;
-    color: var(--accent);
-    margin-bottom: 0.5rem;
-  }
-
-  .qa-title {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #fff;
-    margin-bottom: 0.2rem;
-  }
-
-  .qa-desc {
-    font-size: 0.72rem;
-    color: var(--text2);
-    font-family: var(--mono);
-  }
-
-  /* FADE IN */
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .section.active { animation: fadeIn 0.3s ease; }
-
-  /* RESPONSIVE */
-  @media (max-width: 900px) {
-    .lookup-grid { grid-template-columns: 1fr; }
-    .dash-grid { grid-template-columns: repeat(2, 1fr); }
-    .notes-grid { grid-template-columns: 1fr; }
-    header { flex-wrap: wrap; gap: 10px; }
-    nav { flex-wrap: wrap; }
-  }
-
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); }
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#040608;--bg2:#080d12;--bg3:#0d1520;
+  --c1:#00e5ff;--c2:#39ff14;--c3:#ff6d00;--c4:#e040fb;--c5:#ffd600;
+  --dim:rgba(0,229,255,.1);--dimb:rgba(0,229,255,.05);
+  --txt:#8ab4cc;--txt2:#3a5a6a;--txt3:#1a2a3a;
+  --mono:'Share Tech Mono',monospace;
+  --orb:'Orbitron',sans-serif;
+  --exo:'Exo 2',sans-serif;
+  --sidebar:220px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--exo)}
+canvas#bgc{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.scan{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,229,255,.015) 3px,rgba(0,229,255,.015) 4px)}
+.vig{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.75) 100%)}
+
+/* LAYOUT */
+.app{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;padding:.7rem 1.2rem;
+  border-bottom:1px solid var(--dim);background:rgba(4,6,8,.95);flex-shrink:0}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo-svg{width:36px;height:36px;flex-shrink:0}
+.hex-r{animation:hexr 5s linear infinite;transform-origin:50% 50%}
+@keyframes hexr{to{transform:rotate(360deg)}}
+.logo-t{font-family:var(--orb);font-size:1rem;color:var(--c1);letter-spacing:4px;
+  text-shadow:0 0 20px rgba(0,229,255,.4)}
+.logo-s{font-family:var(--mono);font-size:.55rem;color:var(--txt2);letter-spacing:3px}
+.hdr-r{display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:.62rem;color:var(--txt2)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--c2);display:inline-block;margin-right:5px;
+  animation:blink .9s ease-in-out infinite;box-shadow:0 0 6px var(--c2)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+.body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+aside{width:var(--sidebar);background:rgba(8,13,18,.97);border-right:1px solid var(--dim);
+  flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.aside-section{padding:.5rem 0}
+.aside-label{font-family:var(--mono);font-size:.55rem;color:var(--txt3);letter-spacing:3px;
+  text-transform:uppercase;padding:.4rem 1rem .3rem}
+.tool-btn{display:flex;align-items:center;gap:10px;width:100%;padding:.55rem 1rem;
+  background:transparent;border:none;border-left:2px solid transparent;
+  color:var(--txt2);font-family:var(--mono);font-size:.68rem;cursor:pointer;
+  text-align:left;transition:all .18s;letter-spacing:.5px}
+.tool-btn:hover{color:var(--txt);background:rgba(0,229,255,.04);border-left-color:var(--dim)}
+.tool-btn.active{color:var(--c1);background:rgba(0,229,255,.06);border-left-color:var(--c1)}
+.tool-btn .ico{font-size:.75rem;min-width:16px;text-align:center}
+.tool-btn .lbl{flex:1}
+.tool-btn .badge{font-size:.5rem;padding:1px 5px;border:1px solid currentColor;opacity:.7;border-radius:2px}
+.aside-div{height:1px;background:var(--dimb);margin:.2rem .8rem}
+
+/* MAIN CONTENT */
+.content{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.page{display:none;flex:1;padding:1.2rem;flex-direction:column;gap:1rem}
+.page.active{display:flex;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* PAGE HEADER */
+.ph{display:flex;align-items:center;gap:10px;padding-bottom:.8rem;border-bottom:1px solid var(--dimb);flex-shrink:0}
+.ph-tag{font-family:var(--mono);font-size:.55rem;color:var(--c1);letter-spacing:3px;
+  padding:3px 10px;border:1px solid rgba(0,229,255,.2);background:rgba(0,229,255,.03)}
+.ph-title{font-family:var(--orb);font-size:1.2rem;color:#fff;letter-spacing:2px}
+.ph-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(0,229,255,.2),transparent)}
+.ph-sub{font-family:var(--mono);font-size:.6rem;color:var(--txt2)}
+
+/* SEARCH BAR */
+.sbar{display:flex;gap:8px;align-items:stretch}
+.sbar input{flex:1;background:rgba(0,0,0,.6);border:1px solid var(--dim);color:var(--txt);
+  font-family:var(--mono);font-size:.8rem;padding:10px 16px;outline:none;
+  transition:border-color .2s,box-shadow .2s}
+.sbar input:focus{border-color:var(--c1);box-shadow:0 0 0 2px rgba(0,229,255,.07)}
+.sbar input::placeholder{color:var(--txt3)}
+.sbtn{background:transparent;border:1px solid var(--c1);color:var(--c1);
+  font-family:var(--mono);font-size:.65rem;padding:10px 20px;cursor:pointer;
+  letter-spacing:2px;text-transform:uppercase;transition:all .2s;white-space:nowrap}
+.sbtn:hover{background:rgba(0,229,255,.08)}
+.sbtn:active{transform:scale(.97)}
+.sbtn.c2{border-color:var(--c2);color:var(--c2)}
+.sbtn.c3{border-color:var(--c3);color:var(--c3)}
+.sbtn.c4{border-color:var(--c4);color:var(--c4)}
+.sbtn.c5{border-color:var(--c5);color:var(--c5)}
+
+/* RESULTS */
+.loading{display:none;align-items:center;gap:8px;font-family:var(--mono);font-size:.65rem;color:var(--c1)}
+.loading.on{display:flex}
+.sp{width:12px;height:12px;border:1px solid rgba(0,229,255,.2);border-top-color:var(--c1);
+  border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.rbox{display:none;background:rgba(2,4,6,.9);border:1px solid var(--dimb);
+  border-left:2px solid var(--c2);font-family:var(--mono);font-size:.73rem;
+  color:var(--c2);line-height:1.9;white-space:pre-wrap;word-break:break-all;
+  max-height:55vh;overflow-y:auto;padding:1rem}
+.rbox.on{display:block;animation:fi .2s ease}
+.rbox.c1{border-left-color:var(--c1);color:var(--c1)}
+.rbox.c3{border-left-color:var(--c3);color:var(--txt)}
+.rbox.c4{border-left-color:var(--c4);color:var(--c4)}
+.rbox.c5{border-left-color:var(--c5);color:var(--c5)}
+.k{color:var(--txt2)}.v{color:var(--c2)}.w{color:var(--c3)}.e{color:#ff3b3b}.m{color:var(--txt3)}
+.hl{color:var(--c1)}.lk{color:var(--c1);text-decoration:underline;cursor:pointer}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--dim);padding:1rem}
+.card-title{font-family:var(--mono);font-size:.6rem;color:var(--txt2);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:.7rem;display:flex;align-items:center;gap:6px}
+.card-title span{font-size:.55rem;padding:1px 7px;border:1px solid currentColor}
+
+/* STAT */
+.stat{background:var(--bg2);border:1px solid var(--dim);padding:.9rem 1.1rem;position:relative}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--ac,var(--c1))}
+.stat-l{font-family:var(--mono);font-size:.55rem;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;margin-bottom:.3rem}
+.stat-v{font-family:var(--orb);font-size:1.5rem;color:#fff}
+.stat-s{font-family:var(--mono);font-size:.58rem;color:var(--txt3);margin-top:.15rem}
+
+/* USERNAME RESULTS */
+.ulist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem;margin-top:.5rem}
+.uitem{background:var(--bg2);border:1px solid var(--dim);padding:.7rem;
+  font-family:var(--mono);font-size:.65rem;display:flex;align-items:center;
+  gap:8px;transition:all .2s}
+.uitem.found{border-color:rgba(57,255,20,.3);background:rgba(57,255,20,.03)}
+.uitem.unknown{border-color:var(--dimb);opacity:.6}
+.uitem .pname{color:var(--txt);flex:1}
+.uitem .purl{color:var(--c1);font-size:.58rem;cursor:pointer;text-decoration:underline}
+.uitem .pstatus{font-size:.55rem;padding:1px 6px;border:1px solid;border-radius:2px}
+.found .pstatus{color:var(--c2);border-color:var(--c2)}
+.unknown .pstatus{color:var(--txt3);border-color:var(--txt3)}
+
+/* DNS TABLE */
+.dns-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.7rem}
+.dns-table th{text-align:left;padding:.4rem .7rem;background:rgba(0,229,255,.05);
+  color:var(--txt2);font-size:.58rem;letter-spacing:2px;border-bottom:1px solid var(--dim)}
+.dns-table td{padding:.4rem .7rem;border-bottom:1px solid var(--dimb);color:var(--c2);word-break:break-all}
+.dns-table td:first-child{color:var(--txt2);min-width:80px}
+.dns-table td:nth-child(2){color:var(--c5);min-width:60px}
+
+/* GEO MAP */
+#map-canvas{border:1px solid var(--dim);background:#020609;width:100%;display:block}
+
+/* HASH TYPE BADGE */
+.hbadge{display:inline-block;font-family:var(--mono);font-size:.6rem;padding:3px 10px;
+  border:1px solid;letter-spacing:2px;margin-bottom:.5rem}
+
+/* LOG */
+.logbox{background:#020406;border:1px solid var(--dimb);padding:.8rem;
+  font-family:var(--mono);font-size:.68rem;max-height:160px;overflow-y:auto}
+.le{display:flex;gap:10px;padding:3px 0;border-bottom:1px solid var(--txt3)}
+.le:last-child{border:none}
+.lt{color:var(--txt3);min-width:60px}.ltp{font-size:.55rem;padding:1px 6px}
+.ok{background:rgba(57,255,20,.08);color:var(--c2)}.info{background:rgba(0,229,255,.08);color:var(--c1)}
+.warn{background:rgba(255,109,0,.08);color:var(--c3)}.err{background:rgba(255,59,59,.08);color:#ff3b3b}
+
+/* RADAR */
+#rad{border:1px solid var(--dim);background:rgba(0,0,0,.7)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:rgba(0,229,255,.2)}
+::-webkit-scrollbar-track{background:transparent}
+
+/* NOTES */
+.notes-wrap{display:grid;grid-template-columns:200px 1fr;gap:.8rem;height:calc(100vh - 180px)}
+.nlist{background:var(--bg2);border:1px solid var(--dim);padding:.6rem;overflow-y:auto;display:flex;flex-direction:column;gap:.3rem}
+.nitem{padding:.5rem .7rem;border:1px solid var(--dim);cursor:pointer;transition:all .2s}
+.nitem:hover,.nitem.active{border-color:rgba(0,229,255,.3);background:rgba(0,229,255,.03)}
+.nitem-t{font-family:var(--mono);font-size:.7rem;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nitem-d{font-family:var(--mono);font-size:.56rem;color:var(--txt3);margin-top:2px}
+.nedit{background:var(--bg2);border:1px solid var(--dim);padding:1rem;display:flex;flex-direction:column;gap:.7rem}
+.nedit input,.nedit textarea{background:#020406;border:1px solid var(--dimb);color:var(--txt);
+  font-family:var(--mono);font-size:.75rem;padding:.65rem 1rem;outline:none;
+  width:100%;transition:border-color .2s}
+.nedit input:focus,.nedit textarea:focus{border-color:rgba(0,229,255,.3)}
+.nedit textarea{min-height:300px;resize:vertical;line-height:1.8;color:var(--c2)}
+
+/* DASHBOARD QUICK BTNS */
+.qbtns{display:flex;flex-wrap:wrap;gap:.5rem}
+.qb{background:transparent;border:1px solid var(--dim);color:var(--txt2);
+  font-family:var(--mono);font-size:.62rem;padding:.5rem 1rem;cursor:pointer;
+  letter-spacing:1px;transition:all .2s}
+.qb:hover{border-color:var(--c1);color:var(--c1);background:rgba(0,229,255,.04)}
+
+@media(max-width:700px){
+  aside{display:none}
+  .g2,.g3{grid-template-columns:1fr}
+  .notes-wrap{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
+<canvas id="bgc"></canvas>
+<div class="scan"></div>
+<div class="vig"></div>
 
+<div class="app">
 <header>
-  <div class="logo">
-    <div class="logo-icon"></div>
-    <div>
-      <div class="logo-text">OSINT HUB</div>
-      <div class="logo-sub">Intelligence Platform v1.0</div>
-    </div>
+  <div class="logo-wrap">
+    <svg class="logo-svg" viewBox="0 0 36 36">
+      <polygon class="hex-r" points="18,1 33,9.5 33,26.5 18,35 3,26.5 3,9.5"
+        fill="none" stroke="rgba(0,229,255,.35)" stroke-width=".8"/>
+      <polygon points="18,6 28,12 28,24 18,30 8,24 8,12"
+        fill="none" stroke="rgba(0,229,255,.6)" stroke-width=".8"/>
+      <circle cx="18" cy="18" r="4" fill="none" stroke="#00e5ff" stroke-width="1.2"/>
+      <circle cx="18" cy="18" r="1.8" fill="#00e5ff"/>
+    </svg>
+    <div><div class="logo-t">OSINT HUB</div><div class="logo-s">Intelligence Platform v3.0</div></div>
   </div>
-  <nav>
-    <a href="#" class="active" onclick="showSection('dashboard',this)">Dashboard</a>
-    <a href="#" onclick="showSection('lookup',this)">Lookup</a>
-    <a href="#" onclick="showSection('resources',this)">Ressources</a>
-    <a href="#" onclick="showSection('notes',this)">Notes</a>
-  </nav>
-  <div class="status-bar">
-    <span><span class="status-dot"></span>ONLINE</span>
-    <span id="clock">--:--:--</span>
+  <div class="hdr-r">
+    <span><span class="dot"></span>ACTIF</span>
+    <span id="clk" style="color:var(--c1);font-family:var(--mono);font-size:.65rem">--:--:--</span>
   </div>
 </header>
 
-<main>
+<div class="body">
+<aside>
+  <div class="aside-section">
+    <div class="aside-label">Général</div>
+    <button class="tool-btn active" onclick="go('dash',this)">
+      <span class="ico">◈</span><span class="lbl">Dashboard</span>
+    </button>
+    <button class="tool-btn" onclick="go('notes',this)">
+      <span class="ico">◇</span><span class="lbl">Notes</span>
+    </button>
+  </div>
+  <div class="aside-div"></div>
+  <div class="aside-section">
+    <div class="aside-label">Réseau</div>
+    <button class="tool-btn" onclick="go('ip',this)">
+      <span class="ico">⬡</span><span class="lbl">IP Lookup</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('dns',this)">
+      <span class="ico">⬡</span><span class="lbl">DNS Lookup</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('geo',this)">
+      <span class="ico">⬡</span><span class="lbl">Géoloc IP</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('whois',this)">
+      <span class="ico">⬡</span><span class="lbl">WHOIS</span><span class="badge">LIVE</span>
+    </button>
+  </div>
+  <div class="aside-div"></div>
+  <div class="aside-section">
+    <div class="aside-label">Identité</div>
+    <button class="tool-btn" onclick="go('email',this)">
+      <span class="ico">◈</span><span class="lbl">Email Analyse</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('user',this)">
+      <span class="ico">◈</span><span class="lbl">Username</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('phone',this)">
+      <span class="ico">◈</span><span class="lbl">Téléphone</span>
+    </button>
+  </div>
+  <div class="aside-div"></div>
+  <div class="aside-section">
+    <div class="aside-label">Fichiers</div>
+    <button class="tool-btn" onclick="go('hash',this)">
+      <span class="ico">◇</span><span class="lbl">Hash Analyser</span>
+    </button>
+    <button class="tool-btn" onclick="go('b64',this)">
+      <span class="ico">◇</span><span class="lbl">Base64</span>
+    </button>
+    <button class="tool-btn" onclick="go('url',this)">
+      <span class="ico">◇</span><span class="lbl">URL Analyser</span>
+    </button>
+  </div>
+  <div class="aside-div"></div>
+  <div class="aside-section">
+    <div class="aside-label">Crypto</div>
+    <button class="tool-btn" onclick="go('btc',this)">
+      <span class="ico">◇</span><span class="lbl">BTC Address</span><span class="badge">LIVE</span>
+    </button>
+    <button class="tool-btn" onclick="go('eth',this)">
+      <span class="ico">◇</span><span class="lbl">ETH Address</span><span class="badge">LIVE</span>
+    </button>
+  </div>
+  <div class="aside-div"></div>
+  <div class="aside-section">
+    <div class="aside-label">Outils</div>
+    <button class="tool-btn" onclick="go('dork',this)">
+      <span class="ico">◇</span><span class="lbl">Google Dorks</span>
+    </button>
+    <button class="tool-btn" onclick="go('cidr',this)">
+      <span class="ico">◇</span><span class="lbl">CIDR Calc</span>
+    </button>
+    <button class="tool-btn" onclick="go('enc',this)">
+      <span class="ico">◇</span><span class="lbl">Encodage</span>
+    </button>
+  </div>
+</aside>
 
-  <!-- DASHBOARD -->
-  <section id="dashboard" class="section active">
-    <div class="page-header">
-      <h1>// Section 01</h1>
-      <h2>Dashboard</h2>
+<div class="content">
+
+<!-- DASHBOARD -->
+<div id="dash" class="page active">
+  <div class="ph"><div class="ph-tag">01</div><div class="ph-title">DASHBOARD</div><div class="ph-line"></div></div>
+  <div class="g3">
+    <div class="stat" style="--ac:var(--c1)"><div class="stat-l">Outils intégrés</div><div class="stat-v">15</div><div class="stat-s">tout en local</div></div>
+    <div class="stat" style="--ac:var(--c2)"><div class="stat-l">APIs live</div><div class="stat-v">8</div><div class="stat-s">résultats directs</div></div>
+    <div class="stat" style="--ac:var(--c4)"><div class="stat-l">Notes</div><div class="stat-v" id="dn">0</div><div class="stat-s">investigations</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="card-title"><span style="color:var(--c1)">LOG</span> Journal de session</div>
+      <div class="logbox" id="log"></div>
     </div>
-
-    <div class="dash-grid">
-      <div class="stat-card">
-        <div class="stat-label">Ressources</div>
-        <div class="stat-value">24</div>
-        <div class="stat-sub">outils référencés</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Catégories</div>
-        <div class="stat-value">7</div>
-        <div class="stat-sub">domaines couverts</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Lookup types</div>
-        <div class="stat-value">6</div>
-        <div class="stat-sub">IP, domaine, email...</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Notes</div>
-        <div class="stat-value" id="notes-count">0</div>
-        <div class="stat-sub">investigations</div>
-      </div>
+    <div>
+      <div class="card-title"><span style="color:var(--c2)">RADAR</span> Activité</div>
+      <canvas id="rad" width="340" height="160" style="width:100%;height:160px"></canvas>
     </div>
+  </div>
+  <div class="card-title" style="margin-top:.3rem">Accès rapide</div>
+  <div class="qbtns">
+    <button class="qb" onclick="goTo('ip')">⬡ IP Lookup</button>
+    <button class="qb" onclick="goTo('dns')">⬡ DNS</button>
+    <button class="qb" onclick="goTo('geo')">⬡ Géoloc</button>
+    <button class="qb" onclick="goTo('whois')">⬡ WHOIS</button>
+    <button class="qb" onclick="goTo('email')">◈ Email</button>
+    <button class="qb" onclick="goTo('user')">◈ Username</button>
+    <button class="qb" onclick="goTo('hash')">◇ Hash</button>
+    <button class="qb" onclick="goTo('btc')">◇ Bitcoin</button>
+    <button class="qb" onclick="goTo('dork')">◇ Dorks</button>
+    <button class="qb" onclick="goTo('b64')">◇ Base64</button>
+    <button class="qb" onclick="goTo('url')">◇ URL</button>
+    <button class="qb" onclick="goTo('cidr')">◇ CIDR</button>
+    <button class="qb" onclick="goTo('enc')">◇ Encodage</button>
+  </div>
+</div>
 
-    <div class="page-header" style="margin-top:1.5rem">
-      <h2 style="font-size:1.1rem">Accès rapide</h2>
-    </div>
-
-    <div class="quick-access">
-      <a class="qa-btn" href="#" onclick="showSection('lookup',null);document.querySelector('nav a:nth-child(2)').classList.add('active');document.querySelector('nav a:nth-child(1)').classList.remove('active')">
-        <div class="qa-icon">[IP]</div>
-        <div class="qa-title">IP Lookup</div>
-        <div class="qa-desc">Géoloc, ASN, proxy</div>
-      </a>
-      <a class="qa-btn" href="https://whois.domaintools.com" target="_blank">
-        <div class="qa-icon">[WH]</div>
-        <div class="qa-title">WHOIS</div>
-        <div class="qa-desc">Infos domaine</div>
-      </a>
-      <a class="qa-btn" href="https://haveibeenpwned.com" target="_blank">
-        <div class="qa-icon">[BR]</div>
-        <div class="qa-title">HaveIBeenPwned</div>
-        <div class="qa-desc">Vérif. fuites</div>
-      </a>
-      <a class="qa-btn" href="https://www.shodan.io" target="_blank">
-        <div class="qa-icon">[SH]</div>
-        <div class="qa-title">Shodan</div>
-        <div class="qa-desc">Moteur IoT</div>
-      </a>
-      <a class="qa-btn" href="https://censys.io" target="_blank">
-        <div class="qa-icon">[CE]</div>
-        <div class="qa-title">Censys</div>
-        <div class="qa-desc">Scan internet</div>
-      </a>
-      <a class="qa-btn" href="https://web.archive.org" target="_blank">
-        <div class="qa-icon">[WB]</div>
-        <div class="qa-title">Wayback Machine</div>
-        <div class="qa-desc">Archives web</div>
-      </a>
-    </div>
-
-    <div class="activity-log">
-      <h3>// Journal de session</h3>
-      <div class="log-entry">
-        <span class="log-time" id="log-time-1">--:--</span>
-        <span class="log-type info">INIT</span>
-        <span class="log-msg">Plateforme chargée. Bienvenue sur OSINT HUB.</span>
-      </div>
-      <div class="log-entry">
-        <span class="log-time" id="log-time-2">--:--</span>
-        <span class="log-type ok">OK</span>
-        <span class="log-msg">24 ressources indexées. 6 modules de lookup disponibles.</span>
-      </div>
-      <div class="log-entry">
-        <span class="log-time" id="log-time-3">--:--</span>
-        <span class="log-type warn">INFO</span>
-        <span class="log-msg">Session locale. Aucune donnée transmise à des serveurs tiers.</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- LOOKUP -->
-  <section id="lookup" class="section">
-    <div class="page-header">
-      <h1>// Section 02</h1>
-      <h2>Outils de Lookup</h2>
-    </div>
-
-    <div class="lookup-grid">
-
-      <!-- IP -->
-      <div class="lookup-card ip">
-        <h3><span>IP</span> Adresse IP</h3>
-        <div class="input-row">
-          <input type="text" id="ip-input" placeholder="ex: 8.8.8.8" />
-          <button class="btn" onclick="lookupIP()">Analyser</button>
-        </div>
-        <div class="result-box" id="ip-result"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://ipinfo.io" target="_blank">IPInfo</a>
-          <a class="tool-link" href="https://www.abuseipdb.com" target="_blank">AbuseIPDB</a>
-          <a class="tool-link" href="https://shodan.io" target="_blank">Shodan</a>
-          <a class="tool-link" href="https://viz.greynoise.io" target="_blank">GreyNoise</a>
-        </div>
-      </div>
-
-      <!-- DOMAIN -->
-      <div class="lookup-card domain">
-        <h3><span>DOMAIN</span> Nom de domaine</h3>
-        <div class="input-row">
-          <input type="text" id="domain-input" placeholder="ex: example.com" />
-          <button class="btn green" onclick="lookupDomain()">Analyser</button>
-        </div>
-        <div class="result-box" id="domain-result" style="border-left-color: var(--accent2)"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://whois.domaintools.com" target="_blank">WHOIS</a>
-          <a class="tool-link" href="https://dnsdumpster.com" target="_blank">DNSDumpster</a>
-          <a class="tool-link" href="https://crt.sh" target="_blank">crt.sh</a>
-          <a class="tool-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
-        </div>
-      </div>
-
-      <!-- EMAIL -->
-      <div class="lookup-card email">
-        <h3><span>EMAIL</span> Adresse email</h3>
-        <div class="input-row">
-          <input type="text" id="email-input" placeholder="ex: user@domain.com" />
-          <button class="btn" style="border-color:var(--accent3);color:var(--accent3)" onclick="lookupEmail()">Analyser</button>
-        </div>
-        <div class="result-box" id="email-result" style="border-left-color:var(--accent3)"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://haveibeenpwned.com" target="_blank">HaveIBeenPwned</a>
-          <a class="tool-link" href="https://hunter.io" target="_blank">Hunter.io</a>
-          <a class="tool-link" href="https://epieos.com" target="_blank">Epieos</a>
-        </div>
-      </div>
-
-      <!-- PHONE -->
-      <div class="lookup-card phone">
-        <h3><span>PHONE</span> Numéro de téléphone</h3>
-        <div class="input-row">
-          <input type="text" id="phone-input" placeholder="ex: +33612345678" />
-          <button class="btn" style="border-color:var(--yellow);color:var(--yellow)" onclick="lookupPhone()">Analyser</button>
-        </div>
-        <div class="result-box" id="phone-result" style="border-left-color:var(--yellow)"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://www.truecaller.com" target="_blank">Truecaller</a>
-          <a class="tool-link" href="https://www.phoneinfoga.com" target="_blank">PhoneInfoga</a>
-          <a class="tool-link" href="https://sync.me" target="_blank">Sync.me</a>
-        </div>
-      </div>
-
-      <!-- USERNAME -->
-      <div class="lookup-card user">
-        <h3><span>USER</span> Pseudonyme / Username</h3>
-        <div class="input-row">
-          <input type="text" id="user-input" placeholder="ex: john_doe" />
-          <button class="btn" style="border-color:#b57bee;color:#b57bee" onclick="lookupUser()">Analyser</button>
-        </div>
-        <div class="result-box" id="user-result" style="border-left-color:#b57bee"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://sherlock-project.github.io" target="_blank">Sherlock</a>
-          <a class="tool-link" href="https://whatsmyname.app" target="_blank">WhatsMyName</a>
-          <a class="tool-link" href="https://namechk.com" target="_blank">Namechk</a>
-          <a class="tool-link" href="https://usersearch.org" target="_blank">UserSearch</a>
-        </div>
-      </div>
-
-      <!-- HASH -->
-      <div class="lookup-card hash">
-        <h3><span>HASH</span> Hash / Empreinte</h3>
-        <div class="input-row">
-          <input type="text" id="hash-input" placeholder="MD5, SHA1, SHA256..." />
-          <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="lookupHash()">Analyser</button>
-        </div>
-        <div class="result-box" id="hash-result" style="border-left-color:var(--red)"></div>
-        <div class="tool-links">
-          <a class="tool-link" href="https://www.virustotal.com" target="_blank">VirusTotal</a>
-          <a class="tool-link" href="https://crackstation.net" target="_blank">CrackStation</a>
-          <a class="tool-link" href="https://md5hashing.net" target="_blank">MD5Hashing</a>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- RESOURCES -->
-  <section id="resources" class="section">
-    <div class="page-header">
-      <h1>// Section 03</h1>
-      <h2>Ressources OSINT</h2>
-    </div>
-
-    <div class="res-cats">
-      <button class="res-cat-btn active" onclick="filterRes('all',this)">Tous</button>
-      <button class="res-cat-btn" onclick="filterRes('search',this)">Recherche</button>
-      <button class="res-cat-btn" onclick="filterRes('network',this)">Réseau</button>
-      <button class="res-cat-btn" onclick="filterRes('social',this)">Social</button>
-      <button class="res-cat-btn" onclick="filterRes('breach',this)">Fuites</button>
-      <button class="res-cat-btn" onclick="filterRes('geo',this)">Géoloc</button>
-      <button class="res-cat-btn" onclick="filterRes('crypto',this)">Crypto</button>
-      <button class="res-cat-btn" onclick="filterRes('darkweb',this)">Darkweb</button>
-    </div>
-
-    <div class="resources-grid" id="resources-grid"></div>
-  </section>
-
-  <!-- NOTES -->
-  <section id="notes" class="section">
-    <div class="page-header">
-      <h1>// Section 04</h1>
-      <h2>Notes d'investigation</h2>
-    </div>
-
-    <div class="notes-grid">
-      <div class="note-sidebar">
-        <h3>// Investigations</h3>
-        <button class="btn" style="width:100%;margin-bottom:1rem" onclick="newNote()">+ Nouvelle note</button>
-        <div id="notes-list"></div>
-      </div>
-      <div class="note-editor">
-        <input type="text" id="note-title" placeholder="Titre de l'investigation..." />
-        <textarea id="note-body" placeholder="Tes notes, IP trouvées, pseudos, liens... tout ce que tu veux documenter."></textarea>
-        <div class="note-actions">
-          <button class="btn green" onclick="saveNote()">Sauvegarder</button>
-          <button class="btn" style="border-color:var(--red);color:var(--red)" onclick="deleteNote()">Supprimer</button>
-        </div>
+<!-- IP LOOKUP -->
+<div id="ip" class="page">
+  <div class="ph"><div class="ph-tag">NET</div><div class="ph-title">IP LOOKUP</div><div class="ph-line"></div><div class="ph-sub">API ipapi.co — résultats directs</div></div>
+  <div class="sbar">
+    <input id="ip-i" type="text" placeholder="Adresse IP (vide = votre propre IP)..." />
+    <button class="sbtn" onclick="doIP()">ANALYSER</button>
+  </div>
+  <div class="loading" id="ip-l"><div class="sp"></div>Interrogation ipapi.co...</div>
+  <div class="rbox" id="ip-r"></div>
+  <div class="g2" style="margin-top:.5rem">
+    <div class="card">
+      <div class="card-title"><span style="color:var(--c1)">INFO</span> Que montre cet outil</div>
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--txt2);line-height:1.9">
+        • Pays, région, ville, code postal<br>
+        • Latitude / longitude<br>
+        • Fournisseur d'accès (ISP)<br>
+        • Numéro ASN et organisation<br>
+        • Timezone, monnaie, langue<br>
+        • Détection proxy/VPN (partielle)
       </div>
     </div>
-  </section>
+    <div class="card">
+      <div class="card-title"><span style="color:var(--c3)">TIPS</span> Exemples d'IPs à tester</div>
+      <div style="font-family:var(--mono);font-size:.65rem;line-height:2">
+        <span class="lk" onclick="document.getElementById('ip-i').value='8.8.8.8';doIP()">8.8.8.8</span> — Google DNS<br>
+        <span class="lk" onclick="document.getElementById('ip-i').value='1.1.1.1';doIP()">1.1.1.1</span> — Cloudflare<br>
+        <span class="lk" onclick="document.getElementById('ip-i').value='185.220.101.1';doIP()">185.220.101.1</span> — Nœud Tor<br>
+        <span class="lk" onclick="document.getElementById('ip-i').value='';doIP()">Vide</span> — Votre propre IP
+      </div>
+    </div>
+  </div>
+</div>
 
-</main>
+<!-- DNS LOOKUP -->
+<div id="dns" class="page">
+  <div class="ph"><div class="ph-tag">NET</div><div class="ph-title">DNS LOOKUP</div><div class="ph-line"></div><div class="ph-sub">API dns.google — tous les enregistrements</div></div>
+  <div class="sbar">
+    <input id="dns-i" type="text" placeholder="Domaine ex: google.com, github.com..." />
+    <button class="sbtn c2" onclick="doDNS()">RÉSOUDRE</button>
+  </div>
+  <div class="loading" id="dns-l"><div class="sp"></div>Résolution DNS via dns.google...</div>
+  <div id="dns-r" style="display:none;margin-top:.5rem">
+    <div style="font-family:var(--mono);font-size:.62rem;color:var(--txt2);margin-bottom:.5rem" id="dns-domain"></div>
+    <div style="overflow-x:auto">
+      <table class="dns-table"><thead><tr><th>TYPE</th><th>TTL</th><th>VALEUR</th></tr></thead>
+      <tbody id="dns-tbody"></tbody></table>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:.5rem">
+    <div class="card">
+      <div class="card-title"><span style="color:var(--c2)">TYPES</span> Enregistrements analysés</div>
+      <div style="font-family:var(--mono);font-size:.65rem;color:var(--txt2);line-height:2">
+        <span style="color:var(--c2)">A</span> → IPv4 principale<br>
+        <span style="color:var(--c2)">AAAA</span> → IPv6<br>
+        <span style="color:var(--c2)">MX</span> → Serveurs mail<br>
+        <span style="color:var(--c2)">NS</span> → Nameservers<br>
+        <span style="color:var(--c2)">TXT</span> → SPF, DKIM, vérif<br>
+        <span style="color:var(--c2)">CNAME</span> → Alias<br>
+        <span style="color:var(--c2)">SOA</span> → Autorité de zone
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span style="color:var(--c3)">TIPS</span> Domaines à tester</div>
+      <div style="font-family:var(--mono);font-size:.65rem;line-height:2">
+        <span class="lk" onclick="document.getElementById('dns-i').value='google.com';doDNS()">google.com</span><br>
+        <span class="lk" onclick="document.getElementById('dns-i').value='github.com';doDNS()">github.com</span><br>
+        <span class="lk" onclick="document.getElementById('dns-i').value='twitter.com';doDNS()">twitter.com</span><br>
+        <span class="lk" onclick="document.getElementById('dns-i').value='protonmail.com';doDNS()">protonmail.com</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GEO -->
+<div id="geo" class="page">
+  <div class="ph"><div class="ph-tag">NET</div><div class="ph-title">GÉOLOC IP</div><div class="ph-line"></div><div class="ph-sub">Carte + données complètes</div></div>
+  <div class="sbar">
+    <input id="geo-i" type="text" placeholder="Adresse IP (vide = votre IP)..." />
+    <button class="sbtn c3" onclick="doGeo()">GÉOLOCALISER</button>
+  </div>
+  <div class="loading" id="geo-l"><div class="sp"></div>Géolocalisation en cours...</div>
+  <div class="g2" style="margin-top:.5rem">
+    <div class="rbox c3" id="geo-r" style="max-height:none;height:auto"></div>
+    <canvas id="map-canvas" width="500" height="260" style="display:none"></canvas>
+  </div>
+</div>
+
+<!-- WHOIS -->
+<div id="whois" class="page">
+  <div class="ph"><div class="ph-tag">NET</div><div class="ph-title">WHOIS / DOMAINE</div><div class="ph-line"></div><div class="ph-sub">Infos registraire + DNS complet</div></div>
+  <div class="sbar">
+    <input id="who-i" type="text" placeholder="Domaine ex: example.com..." />
+    <button class="sbtn" onclick="doWHOIS()">RECHERCHER</button>
+  </div>
+  <div class="loading" id="who-l"><div class="sp"></div>Récupération des données...</div>
+  <div class="rbox" id="who-r"></div>
+  <div class="card" style="margin-top:.5rem">
+    <div class="card-title"><span style="color:var(--c1)">INFO</span> Sources utilisées (intégrées)</div>
+    <div style="font-family:var(--mono);font-size:.65rem;color:var(--txt2);line-height:1.9">
+      • <span style="color:var(--c1)">rdap.org</span> — RDAP (WHOIS nouvelle génération, JSON structuré)<br>
+      • <span style="color:var(--c1)">dns.google</span> — Tous les enregistrements DNS<br>
+      • <span style="color:var(--c1)">ipapi.co</span> — Infos IP des serveurs du domaine<br>
+      • Détection CMS / hébergeur via NS records
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL -->
+<div id="email" class="page">
+  <div class="ph"><div class="ph-tag">ID</div><div class="ph-title">EMAIL ANALYSER</div><div class="ph-line"></div><div class="ph-sub">Validation + MX + empreinte numérique</div></div>
+  <div class="sbar">
+    <input id="em-i" type="text" placeholder="Adresse email ex: user@domain.com..." />
+    <button class="sbtn c3" onclick="doEmail()">ANALYSER</button>
+  </div>
+  <div class="loading" id="em-l"><div class="sp"></div>Analyse en cours...</div>
+  <div class="rbox c3" id="em-r"></div>
+</div>
+
+<!-- USERNAME -->
+<div id="user" class="page">
+  <div class="ph"><div class="ph-tag">ID</div><div class="ph-title">USERNAME SEARCH</div><div class="ph-line"></div><div class="ph-sub">Présence sur 25+ plateformes — vérification directe</div></div>
+  <div class="sbar">
+    <input id="us-i" type="text" placeholder="Username / pseudo ex: johndoe..." />
+    <button class="sbtn c4" onclick="doUser()">SCANNER</button>
+  </div>
+  <div class="loading" id="us-l"><div class="sp"></div>Scan des plateformes en cours...</div>
+  <div id="us-info" style="display:none;font-family:var(--mono);font-size:.65rem;color:var(--txt2);margin:.3rem 0">
+    <span id="us-found" style="color:var(--c2)">0</span> liens générés —
+    <span style="color:var(--c3)">Note : CORS empêche la vérification auto depuis le navigateur. Clique sur les liens pour ouvrir directement.</span>
+  </div>
+  <div class="ulist" id="us-list"></div>
+</div>
+
+<!-- PHONE -->
+<div id="phone" class="page">
+  <div class="ph"><div class="ph-tag">ID</div><div class="ph-title">TÉLÉPHONE</div><div class="ph-line"></div><div class="ph-sub">Analyse format + indicatif + opérateur</div></div>
+  <div class="sbar">
+    <input id="ph-i" type="text" placeholder="Numéro ex: +33612345678, +14155552671..." />
+    <button class="sbtn c4" onclick="doPhone()">ANALYSER</button>
+  </div>
+  <div class="rbox c4" id="ph-r"></div>
+</div>
+
+<!-- HASH -->
+<div id="hash" class="page">
+  <div class="ph"><div class="ph-tag">FILE</div><div class="ph-title">HASH ANALYSER</div><div class="ph-line"></div><div class="ph-sub">Identification + calcul local</div></div>
+  <div class="sbar">
+    <input id="hsh-i" type="text" placeholder="Hash MD5, SHA1, SHA256, SHA512, bcrypt..." />
+    <button class="sbtn c5" onclick="doHash()">IDENTIFIER</button>
+  </div>
+  <div class="rbox c5" id="hsh-r"></div>
+  <div style="margin-top:1rem">
+    <div class="card-title" style="margin-bottom:.5rem"><span style="color:var(--c5)">CALC</span> Calculer le hash d'un texte</div>
+    <div class="sbar">
+      <input id="hsh-txt" type="text" placeholder="Texte à hasher..." />
+      <button class="sbtn c5" onclick="calcHash('md5')">MD5</button>
+      <button class="sbtn c5" onclick="calcHash('sha1')">SHA1</button>
+      <button class="sbtn c5" onclick="calcHash('sha256')">SHA256</button>
+    </div>
+    <div class="rbox c5" id="hsh-calc" style="margin-top:.5rem"></div>
+  </div>
+</div>
+
+<!-- BASE64 -->
+<div id="b64" class="page">
+  <div class="ph"><div class="ph-tag">FILE</div><div class="ph-title">BASE64</div><div class="ph-line"></div><div class="ph-sub">Encoder / Décoder instantanément</div></div>
+  <div class="g2">
+    <div>
+      <div class="card-title" style="margin-bottom:.4rem"><span style="color:var(--c1)">INPUT</span> Texte / Base64</div>
+      <textarea id="b64-i" style="width:100%;height:150px;background:#020406;border:1px solid var(--dimb);
+        color:var(--txt);font-family:var(--mono);font-size:.73rem;padding:.7rem;outline:none;resize:vertical"
+        placeholder="Colle ton texte ou ta chaîne Base64 ici..."></textarea>
+      <div style="display:flex;gap:.5rem;margin-top:.5rem">
+        <button class="sbtn" onclick="b64enc()">ENCODER →</button>
+        <button class="sbtn c2" onclick="b64dec()">← DÉCODER</button>
+        <button class="sbtn c3" onclick="b64auto()">AUTO-DETECT</button>
+      </div>
+    </div>
+    <div>
+      <div class="card-title" style="margin-bottom:.4rem"><span style="color:var(--c2)">OUTPUT</span> Résultat</div>
+      <textarea id="b64-o" style="width:100%;height:150px;background:#020406;border:1px solid var(--dimb);
+        color:var(--c2);font-family:var(--mono);font-size:.73rem;padding:.7rem;outline:none;resize:vertical"
+        placeholder="Résultat ici..." readonly></textarea>
+      <div style="margin-top:.5rem;font-family:var(--mono);font-size:.62rem;color:var(--txt2)" id="b64-info"></div>
+    </div>
+  </div>
+</div>
+
+<!-- URL ANALYSER -->
+<div id="url" class="page">
+  <div class="ph"><div class="ph-tag">FILE</div><div class="ph-title">URL ANALYSER</div><div class="ph-line"></div><div class="ph-sub">Décomposition complète d'une URL</div></div>
+  <div class="sbar">
+    <input id="url-i" type="text" placeholder="URL complète ex: https://user:pass@sub.domain.com:8080/path?q=1#anchor" />
+    <button class="sbtn" onclick="doURL()">ANALYSER</button>
+  </div>
+  <div class="rbox" id="url-r"></div>
+</div>
+
+<!-- BITCOIN -->
+<div id="btc" class="page">
+  <div class="ph"><div class="ph-tag">CRYPTO</div><div class="ph-title">BITCOIN ADDRESS</div><div class="ph-line"></div><div class="ph-sub">Blockchain.info API — transactions & solde</div></div>
+  <div class="sbar">
+    <input id="btc-i" type="text" placeholder="Adresse BTC ex: 1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf..." />
+    <button class="sbtn c5" onclick="doBTC()">RECHERCHER</button>
+  </div>
+  <div class="loading" id="btc-l"><div class="sp"></div>Interrogation blockchain.info...</div>
+  <div class="rbox c5" id="btc-r"></div>
+</div>
+
+<!-- ETH -->
+<div id="eth" class="page">
+  <div class="ph"><div class="ph-tag">CRYPTO</div><div class="ph-title">ETHEREUM ADDRESS</div><div class="ph-line"></div><div class="ph-sub">Etherscan API — solde & transactions</div></div>
+  <div class="sbar">
+    <input id="eth-i" type="text" placeholder="Adresse ETH ex: 0x742d35Cc6634C0532925a3b844Bc454e4438f44e..." />
+    <button class="sbtn c4" onclick="doETH()">RECHERCHER</button>
+  </div>
+  <div class="loading" id="eth-l"><div class="sp"></div>Interrogation etherscan.io...</div>
+  <div class="rbox c4" id="eth-r"></div>
+</div>
+
+<!-- GOOGLE DORKS -->
+<div id="dork" class="page">
+  <div class="ph"><div class="ph-tag">TOOL</div><div class="ph-title">GOOGLE DORKS</div><div class="ph-line"></div><div class="ph-sub">Générateur de requêtes avancées</div></div>
+  <div class="g2">
+    <div>
+      <div class="card-title" style="margin-bottom:.6rem"><span style="color:var(--c1)">CIBLE</span> Paramètres</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <input id="dk-site" style="background:#020406;border:1px solid var(--dimb);color:var(--txt);
+          font-family:var(--mono);font-size:.73rem;padding:.6rem 1rem;outline:none;width:100%"
+          placeholder="Site cible (ex: example.com)" />
+        <input id="dk-kw" style="background:#020406;border:1px solid var(--dimb);color:var(--txt);
+          font-family:var(--mono);font-size:.73rem;padding:.6rem 1rem;outline:none;width:100%"
+          placeholder="Mot-clé (ex: password, admin, login)" />
+        <input id="dk-ext" style="background:#020406;border:1px solid var(--dimb);color:var(--txt);
+          font-family:var(--mono);font-size:.73rem;padding:.6rem 1rem;outline:none;width:100%"
+          placeholder="Extension fichier (ex: pdf, xls, sql)" />
+        <button class="sbtn" onclick="doDork()">GÉNÉRER LES DORKS</button>
+      </div>
+    </div>
+    <div>
+      <div class="card-title" style="margin-bottom:.4rem"><span style="color:var(--c2)">OUTPUT</span> Requêtes générées</div>
+      <div class="rbox" id="dk-r" style="max-height:300px;color:var(--c1)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CIDR CALC -->
+<div id="cidr" class="page">
+  <div class="ph"><div class="ph-tag">TOOL</div><div class="ph-title">CIDR CALCULATOR</div><div class="ph-line"></div><div class="ph-sub">Calcul de plages réseau</div></div>
+  <div class="sbar">
+    <input id="cidr-i" type="text" placeholder="CIDR ex: 192.168.1.0/24, 10.0.0.0/8..." />
+    <button class="sbtn c2" onclick="doCIDR()">CALCULER</button>
+  </div>
+  <div class="rbox c2" id="cidr-r"></div>
+</div>
+
+<!-- ENCODAGE -->
+<div id="enc" class="page">
+  <div class="ph"><div class="ph-tag">TOOL</div><div class="ph-title">ENCODAGE / DÉCODAGE</div><div class="ph-line"></div><div class="ph-sub">Multi-formats en local</div></div>
+  <div class="sbar">
+    <input id="enc-i" type="text" placeholder="Texte ou valeur encodée..." />
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem">
+    <button class="sbtn" onclick="enc('url-enc')">URL Encode</button>
+    <button class="sbtn c2" onclick="enc('url-dec')">URL Decode</button>
+    <button class="sbtn" onclick="enc('html-enc')">HTML Encode</button>
+    <button class="sbtn c2" onclick="enc('html-dec')">HTML Decode</button>
+    <button class="sbtn c3" onclick="enc('hex-enc')">→ HEX</button>
+    <button class="sbtn c3" onclick="enc('hex-dec')">HEX →</button>
+    <button class="sbtn c5" onclick="enc('bin-enc')">→ BINAIRE</button>
+    <button class="sbtn c5" onclick="enc('bin-dec')">BINAIRE →</button>
+    <button class="sbtn c4" onclick="enc('rot13')">ROT13</button>
+    <button class="sbtn c4" onclick="enc('reverse')">INVERSER</button>
+  </div>
+  <div class="rbox" id="enc-r" style="margin-top:.5rem;color:var(--txt)"></div>
+</div>
+
+<!-- NOTES -->
+<div id="notes" class="page">
+  <div class="ph"><div class="ph-tag">05</div><div class="ph-title">NOTES</div><div class="ph-line"></div></div>
+  <div style="display:flex;gap:.5rem;margin-bottom:.3rem">
+    <button class="sbtn c2" onclick="newNote()">+ NOUVEAU</button>
+    <button class="sbtn" onclick="saveNote()">SAUVEGARDER</button>
+    <button class="sbtn" style="border-color:#ff3b3b;color:#ff3b3b" onclick="delNote()">SUPPRIMER</button>
+  </div>
+  <div class="notes-wrap">
+    <div class="nlist" id="nlist"></div>
+    <div class="nedit">
+      <input id="nt" type="text" placeholder="Titre de l'investigation..." />
+      <textarea id="nb" placeholder="Notes OSINT — IPs, domaines, usernames, timeline..."></textarea>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /body -->
+</div><!-- /app -->
 
 <script>
-// === CLOCK ===
-function updateClock() {
-  const now = new Date();
-  const t = now.toTimeString().slice(0,8);
-  document.getElementById('clock').textContent = t;
-}
-setInterval(updateClock, 1000);
-updateClock();
+// ═══════════════════════════════
+// BG CANVAS
+// ═══════════════════════════════
+(()=>{
+  const cv=document.getElementById('bgc'),ctx=cv.getContext('2d');
+  let W,H,pts=[];
+  const resize=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;pts=[];
+    const n=Math.floor(W*H/20000);
+    for(let i=0;i<n;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:Math.random()+.3});
+  };
+  const draw=()=>{
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(0,80,140,.035)';ctx.lineWidth=.5;
+    for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=0;y<H;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<130){ctx.strokeStyle=`rgba(0,180,220,${(1-d/130)*.2})`;ctx.lineWidth=.4;
+          ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.stroke()}
+      }
+      ctx.fillStyle='rgba(0,220,255,.45)';ctx.beginPath();ctx.arc(pts[i].x,pts[i].y,pts[i].r,0,Math.PI*2);ctx.fill();
+      pts[i].x+=pts[i].vx;pts[i].y+=pts[i].vy;
+      if(pts[i].x<0||pts[i].x>W)pts[i].vx*=-1;
+      if(pts[i].y<0||pts[i].y>H)pts[i].vy*=-1;
+    }
+    requestAnimationFrame(draw);
+  };
+  window.addEventListener('resize',resize);resize();draw();
+})();
 
-// Log times
-['log-time-1','log-time-2','log-time-3'].forEach(id => {
-  const now = new Date();
-  document.getElementById(id).textContent = now.toTimeString().slice(0,5);
-});
+// RADAR
+(()=>{
+  const cv=document.getElementById('rad'),ctx=cv.getContext('2d');
+  let a=0;const blips=Array.from({length:10},()=>({a:Math.random()*Math.PI*2,r:.1+Math.random()*.85,age:Math.random()*80}));
+  const draw=()=>{
+    const W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=Math.min(cx,cy)-8;
+    ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(0,0,W,H);
+    [.3,.6,.9,1].forEach(f=>{ctx.beginPath();ctx.arc(cx,cy,R*f,0,Math.PI*2);ctx.strokeStyle=`rgba(0,229,255,${.04+f*.04})`;ctx.lineWidth=.5;ctx.stroke()});
+    ctx.strokeStyle='rgba(0,229,255,.06)';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();
+    ctx.save();ctx.translate(cx,cy);
+    for(let i=0;i<55;i++){const ag=a-i*.05;const op=Math.max(0,(55-i)/55)*.15;
+      ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R,ag-.05,ag);ctx.closePath();ctx.fillStyle=`rgba(0,229,255,${op})`;ctx.fill()}
+    ctx.strokeStyle='rgba(0,229,255,.85)';ctx.lineWidth=1.2;ctx.shadowColor='#00e5ff';ctx.shadowBlur=6;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*R,Math.sin(a)*R);ctx.stroke();
+    ctx.restore();
+    blips.forEach(b=>{const diff=((a%(Math.PI*2))-(b.a%(Math.PI*2))+Math.PI*4)%(Math.PI*2);if(diff<.25)b.age=0;b.age++;
+      const fd=Math.max(0,1-b.age/70);if(fd>0){const bx=cx+Math.cos(b.a)*R*b.r,by=cy+Math.sin(b.a)*R*b.r;
+        ctx.beginPath();ctx.arc(bx,by,3,0,Math.PI*2);ctx.fillStyle=`rgba(57,255,20,${fd})`;ctx.shadowColor='#39ff14';ctx.shadowBlur=5;ctx.fill();ctx.shadowBlur=0}});
+    a+=.016;requestAnimationFrame(draw);
+  };draw();
+})();
 
-// === NAV ===
-function showSection(id, el) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+// CLOCK
+setInterval(()=>{document.getElementById('clk').textContent=new Date().toTimeString().slice(0,8)},1000);
+
+// NAV
+function go(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-  if (el) el.classList.add('active');
-  return false;
+  if(btn)btn.classList.add('active');
+}
+function goTo(id){
+  const btns=document.querySelectorAll('.tool-btn');
+  let found=null;
+  btns.forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes(`'${id}'`))found=b});
+  go(id,found);
 }
 
-// === LOOKUP ===
-function showResult(id, text) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.classList.add('visible');
+// LOG
+const logEl=document.getElementById('log');
+function addLog(type,msg){
+  const t=new Date().toTimeString().slice(0,8);
+  const e=document.createElement('div');e.className='le';
+  e.innerHTML=`<span class="lt">${t}</span><span class="ltp ${type}">${type.toUpperCase()}</span><span style="color:var(--txt);flex:1">${msg}</span>`;
+  logEl.appendChild(e);logEl.scrollTop=logEl.scrollHeight;
+}
+setTimeout(()=>addLog('ok','Plateforme chargée — 15 outils disponibles'),300);
+setTimeout(()=>addLog('info','APIs publiques prêtes : ipapi.co, dns.google, blockchain.info'),900);
+setTimeout(()=>addLog('info','Tout reste dans le navigateur — aucune redirection'),1500);
+
+// HELPERS
+const ld=(id,on)=>document.getElementById(id).classList[on?'add':'remove']('on');
+function r(k,v,cls='v'){return`<span class="k">${(k+' ').padEnd(22,'·')} </span><span class="${cls}">${v}</span>\n`}
+function showR(id,html,box=''){const el=document.getElementById(id);el.innerHTML=html;el.className='rbox on'+(box?' '+box:'')}
+function showRaw(id){const el=document.getElementById(id);el.style.display='block';el.style.animation='fi .2s ease'}
+
+// ═══════════════════════════════
+// IP LOOKUP
+// ═══════════════════════════════
+async function doIP(){
+  const v=document.getElementById('ip-i').value.trim();
+  ld('ip-l',true);
+  addLog('info',`IP lookup → ${v||'votre IP'}`);
+  try{
+    const d=await fetch(v?`https://ipapi.co/${v}/json/`:'https://ipapi.co/json/').then(r=>r.json());
+    if(d.error){ld('ip-l',false);showR('ip-r',`<span class="e">Erreur : ${d.reason}</span>`);return}
+    let o='';
+    o+=r('IP',d.ip);
+    o+=r('Pays',`${d.country_name||'—'} ${d.country_code||''}`);
+    o+=r('Région',d.region||'—');
+    o+=r('Ville',d.city||'—');
+    o+=r('Code postal',d.postal||'—');
+    o+=r('Latitude',d.latitude);
+    o+=r('Longitude',d.longitude);
+    o+=r('Timezone',d.timezone||'—');
+    o+=r('UTC offset',d.utc_offset||'—');
+    o+='\n';
+    o+=r('ASN',d.asn||'—','hl');
+    o+=r('Organisation',d.org||'—','hl');
+    o+=r('FAI',d.isp||'—');
+    o+='\n';
+    o+=r('UE',d.in_eu?'OUI':'NON',d.in_eu?'v':'m');
+    o+=r('Monnaie',d.currency_name?`${d.currency_name} (${d.currency})`:'—');
+    o+=r('Langues',d.languages||'—');
+    ld('ip-l',false);showR('ip-r',o);
+    addLog('ok',`${d.ip} → ${d.city}, ${d.country_name} | ${d.org}`);
+  }catch(e){ld('ip-l',false);showR('ip-r',`<span class="e">Erreur réseau : ${e.message}</span>`);addLog('err','Erreur IP lookup')}
 }
 
-function lookupIP() {
-  const val = document.getElementById('ip-input').value.trim();
-  if (!val) return;
-  showResult('ip-result', '→ Redirection vers les outils...\n\nIP analysée : ' + val + '\n\nUtilise les liens ci-dessous pour:\n- IPInfo.io : géolocalisation, ASN, ISP\n- AbuseIPDB : réputation, signalements\n- Shodan : ports ouverts, services\n- GreyNoise : bruit internet, scanner');
-  window.open('https://ipinfo.io/' + val, '_blank');
+// ═══════════════════════════════
+// DNS LOOKUP
+// ═══════════════════════════════
+async function doDNS(){
+  const v=document.getElementById('dns-i').value.trim().replace(/^https?:\/\//,'').split('/')[0];
+  if(!v){showR('dns-r','<span class="e">Entrez un domaine.</span>');return}
+  ld('dns-l',true);
+  document.getElementById('dns-r').style.display='none';
+  addLog('info',`DNS lookup → ${v}`);
+  const types=['A','AAAA','MX','NS','TXT','CNAME','SOA','PTR'];
+  const rows=[];
+  await Promise.all(types.map(async t=>{
+    try{const d=await fetch(`https://dns.google/resolve?name=${v}&type=${t}`).then(r=>r.json());
+      if(d.Answer)d.Answer.forEach(a=>rows.push({type:t,ttl:a.TTL,val:a.data}));
+    }catch{}
+  }));
+  ld('dns-l',false);
+  if(!rows.length){showR('dns-r',`<span class="e">Aucun enregistrement DNS trouvé pour "${v}"</span>`);return}
+  const tb=document.getElementById('dns-tbody');tb.innerHTML='';
+  rows.sort((a,b)=>['A','AAAA','MX','NS','TXT','CNAME','SOA','PTR'].indexOf(a.type)-['A','AAAA','MX','NS','TXT','CNAME','SOA','PTR'].indexOf(b.type));
+  rows.forEach(rw=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${rw.type}</td><td>${rw.ttl}s</td><td>${rw.val}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('dns-domain').textContent=`Domaine analysé : ${v} — ${rows.length} enregistrement(s) trouvé(s)`;
+  showRaw('dns-r');
+  addLog('ok',`DNS ${v} → ${rows.length} enregistrements | Types: ${[...new Set(rows.map(r=>r.type))].join(', ')}`);
 }
 
-function lookupDomain() {
-  const val = document.getElementById('domain-input').value.trim();
-  if (!val) return;
-  showResult('domain-result', '→ Domaine : ' + val + '\n\nOutils recommandés :\n- WHOIS : registrant, dates, nameservers\n- DNSDumpster : subdomains, MX, DNS\n- crt.sh : certificats SSL (subdomains)\n- VirusTotal : réputation, malware');
-  window.open('https://whois.domaintools.com/' + val, '_blank');
+// ═══════════════════════════════
+// GEOLOC
+// ═══════════════════════════════
+async function doGeo(){
+  const v=document.getElementById('geo-i').value.trim();
+  ld('geo-l',true);
+  addLog('info',`Géoloc → ${v||'votre IP'}`);
+  try{
+    const d=await fetch(v?`https://ipapi.co/${v}/json/`:'https://ipapi.co/json/').then(r=>r.json());
+    if(d.error){ld('geo-l',false);showR('geo-r','<span class="e">IP invalide.</span>','c3');return}
+    let o='';
+    o+=r('IP',d.ip,'hl');
+    o+=r('Pays',`${d.country_name} (${d.country})`);
+    o+=r('Région',d.region||'—');
+    o+=r('Ville',d.city||'—');
+    o+=r('Code postal',d.postal||'—');
+    o+='\n';
+    o+=r('Latitude',d.latitude,'hl');
+    o+=r('Longitude',d.longitude,'hl');
+    o+=r('Timezone',d.timezone||'—');
+    o+='\n';
+    o+=r('ASN',d.asn||'—');
+    o+=r('Organisation',d.org||'—');
+    ld('geo-l',false);showR('geo-r',o,'c3');
+    if(d.latitude&&d.longitude)drawMap(d.latitude,d.longitude,d.city,d.country_name);
+    addLog('ok',`Géoloc → ${d.city}, ${d.country_name} [${d.latitude}, ${d.longitude}]`);
+  }catch(e){ld('geo-l',false);showR('geo-r',`<span class="e">Erreur : ${e.message}</span>`,'c3')}
+}
+function drawMap(lat,lon,city,country){
+  const cv=document.getElementById('map-canvas');cv.style.display='block';
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.fillStyle='#020609';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,229,255,.05)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=25){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+  for(let y=0;y<H;y+=25){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  // Parallels
+  ctx.strokeStyle='rgba(0,229,255,.08)';
+  [30,60,90,120,150].forEach(y=>{ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()});
+  ctx.strokeStyle='rgba(0,229,255,.12)';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  const px=(lon+180)/360*W,py=(90-lat)/180*H;
+  [22,15,9].forEach((rr,i)=>{ctx.beginPath();ctx.arc(px,py,rr,0,Math.PI*2);ctx.strokeStyle=`rgba(57,255,20,${.15+i*.12})`;ctx.lineWidth=.7;ctx.stroke()});
+  ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fillStyle='#39ff14';ctx.shadowColor='#39ff14';ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;
+  ctx.fillStyle='#39ff14';ctx.font='11px Share Tech Mono';ctx.fillText(`${city}, ${country}`,px+14,py-2);
+  ctx.fillStyle='rgba(57,255,20,.5)';ctx.font='9px Share Tech Mono';ctx.fillText(`${lat.toFixed(4)}N ${lon.toFixed(4)}E`,px+14,py+12);
 }
 
-function lookupEmail() {
-  const val = document.getElementById('email-input').value.trim();
-  if (!val) return;
-  showResult('email-result', '→ Email : ' + val + '\n\nOutils recommandés :\n- HaveIBeenPwned : fuites de données\n- Hunter.io : validation, employeur\n- Epieos : réseaux sociaux liés');
-  window.open('https://haveibeenpwned.com/account/' + val, '_blank');
+// ═══════════════════════════════
+// WHOIS / RDAP
+// ═══════════════════════════════
+async function doWHOIS(){
+  const v=document.getElementById('who-i').value.trim().replace(/^https?:\/\//,'').split('/')[0].toLowerCase();
+  if(!v){showR('who-r','<span class="e">Entrez un domaine.</span>');return}
+  ld('who-l',true);
+  addLog('info',`WHOIS/RDAP → ${v}`);
+  let o='';
+  // RDAP
+  try{
+    const d=await fetch(`https://rdap.org/domain/${v}`).then(r=>r.json());
+    o+=`<span class="hl">── RDAP ─────────────────────────────────\n</span>`;
+    o+=r('Domaine',d.ldhName||v,'hl');
+    o+=r('Statut',Array.isArray(d.status)?d.status.join(', '):d.status||'—');
+    if(d.events)d.events.forEach(e=>{if(e.eventAction==='registration')o+=r('Enregistré',e.eventDate?.slice(0,10)||'—');if(e.eventAction==='expiration')o+=r('Expire',e.eventDate?.slice(0,10)||'—');if(e.eventAction==='last changed')o+=r('Modifié',e.eventDate?.slice(0,10)||'—')});
+    if(d.entities){
+      const reg=d.entities.find(e=>e.roles?.includes('registrar'));
+      if(reg)o+=r('Registraire',reg.publicIds?.[0]?.identifier||reg.vcardArray?.[1]?.find(x=>x[0]==='fn')?.[3]||'—');
+    }
+    if(d.nameservers)o+=r('Nameservers',d.nameservers.map(n=>n.ldhName).join(', '));
+  }catch{o+=`<span class="w">RDAP non disponible pour ce TLD.\n</span>`}
+  // DNS
+  try{
+    o+=`\n<span class="hl">── DNS ──────────────────────────────────\n</span>`;
+    const types=['A','AAAA','MX','NS'];
+    await Promise.all(types.map(async t=>{
+      const d=await fetch(`https://dns.google/resolve?name=${v}&type=${t}`).then(r=>r.json());
+      if(d.Answer&&d.Answer.length)o+=r(t,d.Answer.map(a=>a.data).join(' | '),'v');
+    }));
+  }catch{}
+  ld('who-l',false);showR('who-r',o);
+  addLog('ok',`WHOIS/RDAP récupéré pour ${v}`);
 }
 
-function lookupPhone() {
-  const val = document.getElementById('phone-input').value.trim();
-  if (!val) return;
-  showResult('phone-result', '→ Numéro : ' + val + '\n\nOutils recommandés :\n- Truecaller : identité associée\n- PhoneInfoga : format, pays, opérateur\n- Sync.me : profil social');
+// ═══════════════════════════════
+// EMAIL
+// ═══════════════════════════════
+async function doEmail(){
+  const v=document.getElementById('em-i').value.trim();
+  if(!v){showR('em-r','<span class="e">Entrez un email.</span>','c3');return}
+  ld('em-l',true);
+  addLog('info',`Email analyse → ${v}`);
+  await new Promise(r=>setTimeout(r,500));
+  const parts=v.split('@'),valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  const domain=parts[1]||'',user=parts[0]||'';
+  const disposables=['guerrillamail','mailinator','tempmail','throwam','10minutemail','trashmail','sharklasers','yopmail','maildrop','dispostable','fakeinbox','spamgourmet'];
+  const freeProviders=['gmail.com','yahoo.com','hotmail.com','outlook.com','live.com','icloud.com','protonmail.com','tutanota.com','mail.com'];
+  const isDisposable=disposables.some(d=>domain.includes(d));
+  const isFree=freeProviders.includes(domain.toLowerCase());
+  let o='';
+  o+=r('Email',v,valid?'v':'e');
+  o+=r('Format',valid?'✓ VALIDE':'✗ INVALIDE',valid?'v':'e');
+  o+=r('Username',user);
+  o+=r('Domaine',domain);
+  o+=r('Type',isDisposable?'⚠ EMAIL JETABLE':isFree?'Gratuit (grand public)':'Potentiellement professionnel',isDisposable?'e':isFree?'w':'v');
+  o+='\n';
+  try{
+    const mx=await fetch(`https://dns.google/resolve?name=${domain}&type=MX`).then(r=>r.json());
+    if(mx.Answer&&mx.Answer.length){
+      o+=r('Serveur MX',mx.Answer[0].data,'v');
+      o+=r('Accepte emails','✓ OUI','v');
+    }else{o+=r('Serveur MX','✗ AUCUN — domaine n\'accepte pas d\'emails','e')}
+    const a=await fetch(`https://dns.google/resolve?name=${domain}&type=A`).then(r=>r.json());
+    if(a.Answer)o+=r('IP du domaine',a.Answer[0].data,'hl');
+    const txt=await fetch(`https://dns.google/resolve?name=${domain}&type=TXT`).then(r=>r.json());
+    if(txt.Answer){
+      const spf=txt.Answer.find(t=>t.data.includes('v=spf'));
+      const dmarc=await fetch(`https://dns.google/resolve?name=_dmarc.${domain}&type=TXT`).then(r=>r.json());
+      o+=r('SPF',spf?'✓ Configuré':'✗ Absent',spf?'v':'w');
+      o+=r('DMARC',dmarc.Answer?'✓ Configuré':'✗ Absent',dmarc.Answer?'v':'w');
+    }
+  }catch{}
+  if(isDisposable)o+=`\n<span class="e">⚠ Email jetable détecté — utilisé pour contourner les vérifications.</span>`;
+  ld('em-l',false);showR('em-r',o,'c3');
+  addLog('ok',`Email ${v} → ${valid?'valide':'invalide'} | ${isDisposable?'JETABLE':isFree?'gratuit':'pro'}`);
 }
 
-function lookupUser() {
-  const val = document.getElementById('user-input').value.trim();
-  if (!val) return;
-  showResult('user-result', '→ Username : ' + val + '\n\nOutils recommandés :\n- Sherlock : 300+ plateformes\n- WhatsMyName : présence web\n- Namechk : disponibilité\n- UserSearch : profils sociaux');
-  window.open('https://whatsmyname.app/?q=' + val, '_blank');
-}
-
-function lookupHash() {
-  const val = document.getElementById('hash-input').value.trim();
-  if (!val) return;
-  const len = val.length;
-  let type = len === 32 ? 'MD5' : len === 40 ? 'SHA1' : len === 64 ? 'SHA256' : 'Inconnu';
-  showResult('hash-result', '→ Hash : ' + val + '\nType détecté : ' + type + '\n\nOutils :\n- VirusTotal : fichier/malware\n- CrackStation : décryptage (dicts)\n- MD5Hashing : reverse lookup');
-}
-
-// === RESOURCES DATA ===
-const resources = [
-  { name: 'Shodan', desc: 'Moteur de recherche pour appareils connectés, ports, services.', url: 'https://shodan.io', cat: 'network' },
-  { name: 'Censys', desc: 'Scanner internet masif, certificats, infrastructure.', url: 'https://censys.io', cat: 'network' },
-  { name: 'DNSDumpster', desc: 'Cartographie DNS, sous-domaines, MX records.', url: 'https://dnsdumpster.com', cat: 'network' },
-  { name: 'crt.sh', desc: 'Transparence des certificats SSL, découverte de subdomains.', url: 'https://crt.sh', cat: 'network' },
-  { name: 'Robtex', desc: 'DNS, IP, ASN, whois, graphe de réseau.', url: 'https://www.robtex.com', cat: 'network' },
-  { name: 'Google Dorks', desc: 'Opérateurs de recherche avancée Google pour OSINT.', url: 'https://www.exploit-db.com/google-hacking-database', cat: 'search' },
-  { name: 'Wayback Machine', desc: 'Archives de pages web, historique de sites.', url: 'https://web.archive.org', cat: 'search' },
-  { name: 'Yandex Images', desc: 'Recherche inversée d\'image, parfois meilleur que Google.', url: 'https://yandex.com/images', cat: 'search' },
-  { name: 'TinEye', desc: 'Recherche inversée d\'image, traçage de photos en ligne.', url: 'https://tineye.com', cat: 'search' },
-  { name: 'Maltego', desc: 'Outil de visualisation de liens entre entités OSINT.', url: 'https://maltego.com', cat: 'search' },
-  { name: 'WhatsMyName', desc: 'Recherche d\'username sur 300+ plateformes simultanément.', url: 'https://whatsmyname.app', cat: 'social' },
-  { name: 'Sherlock', desc: 'Outil CLI Python pour trouver des usernames sur les réseaux.', url: 'https://sherlock-project.github.io', cat: 'social' },
-  { name: 'Social Searcher', desc: 'Monitoring des réseaux sociaux, posts publics en temps réel.', url: 'https://www.social-searcher.com', cat: 'social' },
-  { name: 'Epieos', desc: 'Trouve les comptes liés à un email (Google, etc).', url: 'https://epieos.com', cat: 'social' },
-  { name: 'HaveIBeenPwned', desc: 'Vérification si un email apparaît dans des fuites de données.', url: 'https://haveibeenpwned.com', cat: 'breach' },
-  { name: 'Dehashed', desc: 'Moteur de recherche de bases de données leakées.', url: 'https://dehashed.com', cat: 'breach' },
-  { name: 'IntelliGence X', desc: 'Archive de leaks, darkweb, pastes, et documents.', url: 'https://intelx.io', cat: 'breach' },
-  { name: 'SnusBase', desc: 'Recherche dans des bases de données volées/leakées.', url: 'https://snusbase.com', cat: 'breach' },
-  { name: 'Google Maps', desc: 'Vérification d\'adresses, Street View, géolocalisation.', url: 'https://maps.google.com', cat: 'geo' },
-  { name: 'SunCalc', desc: 'Calcul de la position du soleil pour dater des photos.', url: 'https://www.suncalc.org', cat: 'geo' },
-  { name: 'GeoGuessr', desc: 'Entraînement à la géolocalisation par image.', url: 'https://www.geoguessr.com', cat: 'geo' },
-  { name: 'Blockchain Explorer', desc: 'Analyse de transactions Bitcoin et autres cryptos.', url: 'https://www.blockchain.com/explorer', cat: 'crypto' },
-  { name: 'Etherscan', desc: 'Explorer Ethereum : wallets, tokens, smart contracts.', url: 'https://etherscan.io', cat: 'crypto' },
-  { name: 'Tor2Web', desc: 'Accès à des domaines .onion sans Tor (usage limité).', url: 'https://www.tor2web.org', cat: 'darkweb' },
+// ═══════════════════════════════
+// USERNAME
+// ═══════════════════════════════
+const PLATFORMS=[
+  {n:'GitHub',url:'https://github.com/'},
+  {n:'GitLab',url:'https://gitlab.com/'},
+  {n:'Twitter/X',url:'https://twitter.com/'},
+  {n:'Instagram',url:'https://instagram.com/'},
+  {n:'TikTok',url:'https://tiktok.com/@'},
+  {n:'YouTube',url:'https://youtube.com/@'},
+  {n:'Twitch',url:'https://twitch.tv/'},
+  {n:'Reddit',url:'https://reddit.com/user/'},
+  {n:'Pinterest',url:'https://pinterest.com/'},
+  {n:'LinkedIn',url:'https://linkedin.com/in/'},
+  {n:'Snapchat',url:'https://snapchat.com/add/'},
+  {n:'Steam',url:'https://steamcommunity.com/id/'},
+  {n:'Soundcloud',url:'https://soundcloud.com/'},
+  {n:'Spotify',url:'https://open.spotify.com/user/'},
+  {n:'DeviantArt',url:'https://deviantart.com/'},
+  {n:'Medium',url:'https://medium.com/@'},
+  {n:'Pastebin',url:'https://pastebin.com/u/'},
+  {n:'Keybase',url:'https://keybase.io/'},
+  {n:'HackerNews',url:'https://news.ycombinator.com/user?id='},
+  {n:'ProductHunt',url:'https://producthunt.com/@'},
+  {n:'Mastodon',url:'https://mastodon.social/@'},
+  {n:'Vimeo',url:'https://vimeo.com/'},
+  {n:'Flickr',url:'https://flickr.com/people/'},
+  {n:'Behance',url:'https://behance.net/'},
+  {n:'Dribbble',url:'https://dribbble.com/'},
 ];
-
-function renderResources(filter) {
-  const grid = document.getElementById('resources-grid');
-  grid.innerHTML = '';
-  const filtered = filter === 'all' ? resources : resources.filter(r => r.cat === filter);
-  filtered.forEach(r => {
-    const el = document.createElement('a');
-    el.className = 'res-card';
-    el.href = r.url;
-    el.target = '_blank';
-    el.innerHTML = `
-      <span class="ext-icon">↗</span>
-      <span class="res-card-tag ${r.cat}">${r.cat}</span>
-      <h4>${r.name}</h4>
-      <p>${r.desc}</p>
-    `;
-    grid.appendChild(el);
+async function doUser(){
+  const v=document.getElementById('us-i').value.trim();
+  if(!v){return}
+  ld('us-l',true);
+  addLog('info',`Username scan → "${v}" sur ${PLATFORMS.length} plateformes`);
+  await new Promise(r=>setTimeout(r,400));
+  const list=document.getElementById('us-list');list.innerHTML='';
+  document.getElementById('us-info').style.display='block';
+  document.getElementById('us-found').textContent=PLATFORMS.length;
+  PLATFORMS.forEach(p=>{
+    const url=p.url+encodeURIComponent(v);
+    const div=document.createElement('div');
+    div.className='uitem found';
+    div.innerHTML=`<span class="pname">${p.n}</span><span class="purl" onclick="window.open('${url}','_blank')">${url.length>40?url.slice(0,40)+'…':url}</span><span class="pstatus">LIEN</span>`;
+    list.appendChild(div);
   });
+  ld('us-l',false);
+  addLog('ok',`${PLATFORMS.length} liens générés pour "${v}" — clique pour vérifier`);
 }
 
-function filterRes(cat, btn) {
-  document.querySelectorAll('.res-cat-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderResources(cat);
+// ═══════════════════════════════
+// PHONE
+// ═══════════════════════════════
+function doPhone(){
+  const v=document.getElementById('ph-i').value.trim();
+  if(!v){showR('ph-r','<span class="e">Entrez un numéro.</span>','c4');return}
+  const indicators={'+1':'États-Unis / Canada','+33':'France','+44':'Royaume-Uni','+49':'Allemagne','+34':'Espagne','+39':'Italie','+31':'Pays-Bas','+32':'Belgique','+41':'Suisse','+7':'Russie','+86':'Chine','+91':'Inde','+55':'Brésil','+52':'Mexique','+81':'Japon','+82':'Corée du Sud','+971':'Émirats Arabes Unis','+966':'Arabie Saoudite','+20':'Égypte','+27':'Afrique du Sud','+212':'Maroc','+213':'Algérie','+216':'Tunisie','+90':'Turquie','+380':'Ukraine','+48':'Pologne','+351':'Portugal','+358':'Finlande','+46':'Suède','+47':'Norvège','+45':'Danemark'};
+  const clean=v.replace(/[\s\-\(\)\.]/g,'');
+  let country='Inconnu',detected='';
+  for(const [code,name] of Object.entries(indicators)){if(clean.startsWith(code)){country=name;detected=code;break}}
+  const local=detected?clean.slice(detected.length):clean.startsWith('0')?clean.slice(1):clean;
+  const e164=detected?clean:`+??${clean}`;
+  const valid=/^\+?[\d\s\-\(\)\.]{7,15}$/.test(v);
+  let o='';
+  o+=r('Numéro saisi',v,valid?'v':'e');
+  o+=r('Format E.164',e164,'hl');
+  o+=r('Numéro local',local);
+  o+=r('Indicatif',detected||'Non détecté',detected?'v':'w');
+  o+=r('Pays',country,country!=='Inconnu'?'v':'w');
+  o+=r('Longueur',`${clean.replace('+','')} (${clean.replace('+','').length} chiffres)`);
+  o+=r('Valide',valid?'✓ Oui':'✗ Format suspect',valid?'v':'w');
+  o+='\n<span class="m">─── Ressources manuelles ─────────────\n</span>';
+  o+=r('Truecaller',`Rechercher "${v}" sur Truecaller`,'m');
+  o+=r('PhoneInfoga','Outil CLI open-source (installation locale)','m');
+  showR('ph-r',o,'c4');
+  addLog('ok',`Téléphone ${v} → ${country}`);
 }
 
-renderResources('all');
-
-// === NOTES ===
-let notes = JSON.parse(localStorage.getItem('osint-notes') || '[]');
-let currentNote = null;
-
-function updateNotesCount() {
-  document.getElementById('notes-count').textContent = notes.length;
+// ═══════════════════════════════
+// HASH
+// ═══════════════════════════════
+function doHash(){
+  const v=document.getElementById('hsh-i').value.trim().toLowerCase();
+  if(!v){showR('hsh-r','<span class="e">Entrez un hash.</span>','c5');return}
+  let type='Inconnu',bits='?',info='';
+  if(/^[a-f0-9]{32}$/.test(v)){type='MD5';bits='128 bits';info='Empreinte fichier, mots de passe (déprécié)'}
+  else if(/^[a-f0-9]{40}$/.test(v)){type='SHA-1';bits='160 bits';info='Git commits, ancien standard TLS'}
+  else if(/^[a-f0-9]{56}$/.test(v)){type='SHA-224';bits='224 bits';info='Variante SHA-2'}
+  else if(/^[a-f0-9]{64}$/.test(v)){type='SHA-256';bits='256 bits';info='Bitcoin, TLS 1.3, standard actuel'}
+  else if(/^[a-f0-9]{96}$/.test(v)){type='SHA-384';bits='384 bits';info='TLS haute sécurité'}
+  else if(/^[a-f0-9]{128}$/.test(v)){type='SHA-512';bits='512 bits';info='Très haute sécurité'}
+  else if(/^\$2[aby]\$\d{2}\$/.test(v)){type='bcrypt';bits='—';info='Hash de mot de passe moderne (salted)'}
+  else if(/^\$argon2/.test(v)){type='Argon2';bits='—';info='Standard actuel hash mot de passe'}
+  else if(/^\$6\$/.test(v)){type='SHA-512-crypt';bits='—';info='Hash Linux (/etc/shadow)'}
+  else if(/^[a-f0-9]{8}$/.test(v)){type='CRC32';bits='32 bits';info='Somme de contrôle simple'}
+  let o='';
+  o+=r('Hash',v.length>50?v.slice(0,50)+'…':v);
+  o+=r('Longueur',`${v.length} caractères`);
+  o+=r('Type',type,type==='Inconnu'?'w':'hl');
+  o+=r('Force',bits);
+  o+=r('Usage',info||'—');
+  o+='\n';
+  const salted=['bcrypt','Argon2','SHA-512-crypt'].includes(type);
+  o+=r('Salted',salted?'✓ OUI (résistant aux rainbow tables)':'✗ NON (vulnérable)',salted?'v':'w');
+  o+=r('Craçable',['MD5','SHA-1','CRC32'].includes(type)?'⚠ Potentiellement via rainbow tables':'Très difficile',['MD5','SHA-1','CRC32'].includes(type)?'e':'v');
+  showR('hsh-r',o,'c5');
+  addLog('ok',`Hash identifié : ${type} (${bits})`);
 }
 
-function renderNotesList() {
-  const list = document.getElementById('notes-list');
-  list.innerHTML = '';
-  if (notes.length === 0) {
-    list.innerHTML = '<p style="font-family:var(--mono);font-size:0.72rem;color:var(--text3);padding:8px 0">Aucune note. Crée ta première investigation.</p>';
-    return;
+// HASH CALC
+async function calcHash(algo){
+  const txt=document.getElementById('hsh-txt').value;
+  if(!txt){showR('hsh-calc','<span class="e">Entrez du texte.</span>','c5');return}
+  try{
+    const enc=new TextEncoder().encode(txt);
+    const map={'md5':null,'sha1':'SHA-1','sha256':'SHA-256','sha512':'SHA-512'};
+    if(algo==='md5'){
+      // MD5 local (implémentation JS)
+      const h=md5(txt);
+      showR('hsh-calc',r('MD5',h,'v')+r('Input',`"${txt.slice(0,50)}"`),'c5');
+      return;
+    }
+    const buf=await crypto.subtle.digest(map[algo]||'SHA-256',enc);
+    const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    showR('hsh-calc',r(algo.toUpperCase(),hex,'v')+r('Input',`"${txt.slice(0,50)}"`),'c5');
+    addLog('ok',`Hash calculé: ${algo.toUpperCase()}`);
+  }catch(e){showR('hsh-calc',`<span class="e">${e.message}</span>`,'c5')}
+}
+
+// MD5 simple implementation
+function md5(s){
+  function safeAdd(x,y){const lsw=(x&0xffff)+(y&0xffff);return((x>>16)+(y>>16)+(lsw>>16)<<16)|(lsw&0xffff)}
+  function bitRotateLeft(num,cnt){return(num<<cnt)|(num>>>32-cnt)}
+  function md5cmn(q,a,b,x,s,t){return safeAdd(bitRotateLeft(safeAdd(safeAdd(a,q),safeAdd(x,t)),s),b)}
+  function md5ff(a,b,c,d,x,s,t){return md5cmn(b&c|~b&d,a,b,x,s,t)}
+  function md5gg(a,b,c,d,x,s,t){return md5cmn(b&d|c&~d,a,b,x,s,t)}
+  function md5hh(a,b,c,d,x,s,t){return md5cmn(b^c^d,a,b,x,s,t)}
+  function md5ii(a,b,c,d,x,s,t){return md5cmn(c^(b|~d),a,b,x,s,t)}
+  function str2bin(str){const bin=[];const mask=(1<<8)-1;for(let i=0;i<str.length*8;i+=8)bin[i>>5]|=(str.charCodeAt(i/8)&mask)<<i%32;return bin}
+  function bin2hex(bin){let hex='';const hexChars='0123456789abcdef';for(let i=0;i<bin.length*4;i++){hex+=hexChars.charAt(bin[i>>2]>>i%4*8+4&0xf)+hexChars.charAt(bin[i>>2]>>i%4*8&0xf)}return hex}
+  const x=str2bin(s);x[s.length>>2]|=0x80<<s.length%4*8;x[(s.length+64>>9<<4)+14]=s.length*8;
+  let a=1732584193,b=-271733879,c=-1732584194,d=271733878;
+  for(let i=0;i<x.length;i+=16){
+    const [oa,ob,oc,od]=[a,b,c,d];
+    a=md5ff(a,b,c,d,x[i],7,-680876936);d=md5ff(d,a,b,c,x[i+1],12,-389564586);c=md5ff(c,d,a,b,x[i+2],17,606105819);b=md5ff(b,c,d,a,x[i+3],22,-1044525330);
+    a=md5ff(a,b,c,d,x[i+4],7,-176418897);d=md5ff(d,a,b,c,x[i+5],12,1200080426);c=md5ff(c,d,a,b,x[i+6],17,-1473231341);b=md5ff(b,c,d,a,x[i+7],22,-45705983);
+    a=md5ff(a,b,c,d,x[i+8],7,1770035416);d=md5ff(d,a,b,c,x[i+9],12,-1958414417);c=md5ff(c,d,a,b,x[i+10],17,-42063);b=md5ff(b,c,d,a,x[i+11],22,-1990404162);
+    a=md5ff(a,b,c,d,x[i+12],7,1804603682);d=md5ff(d,a,b,c,x[i+13],12,-40341101);c=md5ff(c,d,a,b,x[i+14],17,-1502002290);b=md5ff(b,c,d,a,x[i+15],22,1236535329);
+    a=md5gg(a,b,c,d,x[i+1],5,-165796510);d=md5gg(d,a,b,c,x[i+6],9,-1069501632);c=md5gg(c,d,a,b,x[i+11],14,643717713);b=md5gg(b,c,d,a,x[i],20,-373897302);
+    a=md5gg(a,b,c,d,x[i+5],5,-701558691);d=md5gg(d,a,b,c,x[i+10],9,38016083);c=md5gg(c,d,a,b,x[i+15],14,-660478335);b=md5gg(b,c,d,a,x[i+4],20,-405537848);
+    a=md5gg(a,b,c,d,x[i+9],5,568446438);d=md5gg(d,a,b,c,x[i+14],9,-1019803690);c=md5gg(c,d,a,b,x[i+3],14,-187363961);b=md5gg(b,c,d,a,x[i+8],20,1163531501);
+    a=md5gg(a,b,c,d,x[i+13],5,-1444681467);d=md5gg(d,a,b,c,x[i+2],9,-51403784);c=md5gg(c,d,a,b,x[i+7],14,1735328473);b=md5gg(b,c,d,a,x[i+12],20,-1926607734);
+    a=md5hh(a,b,c,d,x[i+5],4,-378558);d=md5hh(d,a,b,c,x[i+8],11,-2022574463);c=md5hh(c,d,a,b,x[i+11],16,1839030562);b=md5hh(b,c,d,a,x[i+14],23,-35309556);
+    a=md5hh(a,b,c,d,x[i+1],4,-1530992060);d=md5hh(d,a,b,c,x[i+4],11,1272893353);c=md5hh(c,d,a,b,x[i+7],16,-155497632);b=md5hh(b,c,d,a,x[i+10],23,-1094730640);
+    a=md5hh(a,b,c,d,x[i+13],4,681279174);d=md5hh(d,a,b,c,x[i],11,-358537222);c=md5hh(c,d,a,b,x[i+3],16,-722521979);b=md5hh(b,c,d,a,x[i+6],23,76029189);
+    a=md5hh(a,b,c,d,x[i+9],4,-640364487);d=md5hh(d,a,b,c,x[i+12],11,-421815835);c=md5hh(c,d,a,b,x[i+15],16,530742520);b=md5hh(b,c,d,a,x[i+2],23,-995338651);
+    a=md5ii(a,b,c,d,x[i],6,-198630844);d=md5ii(d,a,b,c,x[i+7],10,1126891415);c=md5ii(c,d,a,b,x[i+14],15,-1416354905);b=md5ii(b,c,d,a,x[i+5],21,-57434055);
+    a=md5ii(a,b,c,d,x[i+12],6,1700485571);d=md5ii(d,a,b,c,x[i+3],10,-1894986606);c=md5ii(c,d,a,b,x[i+10],15,-1051523);b=md5ii(b,c,d,a,x[i+1],21,-2054922799);
+    a=md5ii(a,b,c,d,x[i+8],6,1873313359);d=md5ii(d,a,b,c,x[i+15],10,-30611744);c=md5ii(c,d,a,b,x[i+6],15,-1560198380);b=md5ii(b,c,d,a,x[i+13],21,1309151649);
+    a=md5ii(a,b,c,d,x[i+4],6,-145523070);d=md5ii(d,a,b,c,x[i+11],10,-1120210379);c=md5ii(c,d,a,b,x[i+2],15,718787259);b=md5ii(b,c,d,a,x[i+9],21,-343485551);
+    a=safeAdd(a,oa);b=safeAdd(b,ob);c=safeAdd(c,oc);d=safeAdd(d,od);
   }
-  notes.forEach((n, i) => {
-    const el = document.createElement('div');
-    el.className = 'note-item' + (i === currentNote ? ' active' : '');
-    el.innerHTML = `<div class="note-item-title">${n.title || 'Sans titre'}</div><div class="note-item-date">${n.date}</div>`;
-    el.onclick = () => loadNote(i);
-    list.appendChild(el);
+  return bin2hex([a,b,c,d]);
+}
+
+// ═══════════════════════════════
+// BASE64
+// ═══════════════════════════════
+function b64enc(){const v=document.getElementById('b64-i').value;try{document.getElementById('b64-o').value=btoa(unescape(encodeURIComponent(v)));document.getElementById('b64-info').textContent=`Encodé — ${btoa(unescape(encodeURIComponent(v))).length} caractères`}catch(e){document.getElementById('b64-o').value='ERREUR: '+e.message}}
+function b64dec(){const v=document.getElementById('b64-i').value;try{document.getElementById('b64-o').value=decodeURIComponent(escape(atob(v.trim())));document.getElementById('b64-info').textContent=`Décodé — ${decodeURIComponent(escape(atob(v.trim()))).length} caractères`}catch(e){document.getElementById('b64-o').value='ERREUR: Chaîne Base64 invalide'}}
+function b64auto(){const v=document.getElementById('b64-i').value.trim();try{const d=decodeURIComponent(escape(atob(v)));document.getElementById('b64-o').value=d;document.getElementById('b64-info').textContent='Auto: décodé depuis Base64'}catch{document.getElementById('b64-o').value=btoa(unescape(encodeURIComponent(v)));document.getElementById('b64-info').textContent='Auto: encodé en Base64'}}
+
+// ═══════════════════════════════
+// URL ANALYSER
+// ═══════════════════════════════
+function doURL(){
+  const v=document.getElementById('url-i').value.trim();
+  if(!v){showR('url-r','<span class="e">Entrez une URL.</span>');return}
+  try{
+    const u=new URL(v.includes('://')?v:'https://'+v);
+    let o='';
+    o+=r('URL complète',v);
+    o+=r('Protocole',u.protocol.replace(':',''),'hl');
+    o+=r('Hostname',u.hostname,'v');
+    if(u.username)o+=r('Username',u.username,'w');
+    if(u.password)o+=r('Password','[présent — masqué]','e');
+    o+=r('Port',u.port||`(défaut: ${u.protocol==='https:'?'443':'80'})`);
+    o+=r('Chemin',u.pathname||'/');
+    if(u.search){o+='\n';const params=new URLSearchParams(u.search);params.forEach((v,k)=>o+=r(`Param: ${k}`,v,'v'))}
+    if(u.hash)o+=r('Ancre',u.hash);
+    o+='\n';
+    o+=r('TLD',u.hostname.split('.').slice(-1)[0]);
+    const subparts=u.hostname.split('.');
+    if(subparts.length>2)o+=r('Sous-domaine',subparts.slice(0,-2).join('.'),'w');
+    showR('url-r',o);
+    addLog('ok',`URL analysée : ${u.hostname}`);
+  }catch(e){showR('url-r',`<span class="e">URL invalide : ${e.message}</span>`)}
+}
+
+// ═══════════════════════════════
+// BITCOIN
+// ═══════════════════════════════
+async function doBTC(){
+  const v=document.getElementById('btc-i').value.trim();
+  if(!v){showR('btc-r','<span class="e">Entrez une adresse BTC.</span>','c5');return}
+  if(!/^(1|3|bc1)[a-zA-Z0-9]{25,62}$/.test(v)){showR('btc-r','<span class="e">Format d\'adresse Bitcoin invalide.</span>','c5');return}
+  ld('btc-l',true);
+  addLog('info',`BTC lookup → ${v.slice(0,16)}...`);
+  try{
+    const d=await fetch(`https://blockchain.info/rawaddr/${v}?cors=true`).then(r=>r.json());
+    const bal=(d.final_balance/1e8).toFixed(8);
+    const recv=(d.total_received/1e8).toFixed(8);
+    const sent=(d.total_sent/1e8).toFixed(8);
+    let o='';
+    o+=r('Adresse',v.slice(0,24)+'…','hl');
+    o+=r('Type',v.startsWith('bc1')?'Bech32 (SegWit natif)':v.startsWith('3')?'P2SH (SegWit)':'P2PKH (Legacy)');
+    o+='\n';
+    o+=r('Solde',`${bal} BTC`,'v');
+    o+=r('Total reçu',`${recv} BTC`);
+    o+=r('Total envoyé',`${sent} BTC`);
+    o+=r('Transactions',d.n_tx);
+    if(d.txs&&d.txs.length){
+      o+='\n<span class="k">── Dernières transactions ──────────────\n</span>';
+      d.txs.slice(0,3).forEach((tx,i)=>{
+        const net=tx.result/1e8;
+        o+=r(`TX ${i+1}`,`${net>=0?'+':''}${net.toFixed(8)} BTC (${tx.block_height||'non confirmé'})`,net>=0?'v':'e');
+      });
+    }
+    ld('btc-l',false);showR('btc-r',o,'c5');
+    addLog('ok',`BTC ${v.slice(0,10)}… → solde: ${bal} BTC | ${d.n_tx} TX`);
+  }catch(e){ld('btc-l',false);showR('btc-r',`<span class="e">Erreur : ${e.message}</span>`,'c5');addLog('err','Erreur BTC lookup')}
+}
+
+// ═══════════════════════════════
+// ETHEREUM
+// ═══════════════════════════════
+async function doETH(){
+  const v=document.getElementById('eth-i').value.trim();
+  if(!v){showR('eth-r','<span class="e">Entrez une adresse ETH.</span>','c4');return}
+  if(!/^0x[a-fA-F0-9]{40}$/.test(v)){showR('eth-r','<span class="e">Format d\'adresse Ethereum invalide (0x + 40 hex).</span>','c4');return}
+  ld('eth-l',true);
+  addLog('info',`ETH lookup → ${v.slice(0,12)}...`);
+  try{
+    // Balance via Cloudflare ETH gateway (free, no key)
+    const payload={jsonrpc:'2.0',method:'eth_getBalance',params:[v,'latest'],id:1};
+    const d=await fetch('https://cloudflare-eth.com/v1/mainnet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json());
+    const weiHex=d.result;
+    const wei=parseInt(weiHex,16);
+    const eth=(wei/1e18).toFixed(6);
+    // Tx count
+    const tc=await fetch('https://cloudflare-eth.com/v1/mainnet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',method:'eth_getTransactionCount',params:[v,'latest'],id:1})}).then(r=>r.json());
+    const txCount=parseInt(tc.result,16);
+    let o='';
+    o+=r('Adresse',v.slice(0,20)+'…','hl');
+    o+=r('Réseau','Ethereum Mainnet');
+    o+='\n';
+    o+=r('Solde',`${eth} ETH`,'v');
+    o+=r('Nonce / TX count',txCount);
+    o+=r('Type',txCount>0?'Compte actif (EOA)':'Nouveau compte ou smart contract');
+    o+='\n<span class="m">Source: Cloudflare ETH Gateway (gratuit)\nPour l\'historique complet → etherscan.io\n</span>';
+    ld('eth-l',false);showR('eth-r',o,'c4');
+    addLog('ok',`ETH ${v.slice(0,10)}… → ${eth} ETH | ${txCount} TX`);
+  }catch(e){ld('eth-l',false);showR('eth-r',`<span class="e">Erreur : ${e.message}</span>`,'c4');addLog('err','Erreur ETH lookup')}
+}
+
+// ═══════════════════════════════
+// GOOGLE DORKS GENERATOR
+// ═══════════════════════════════
+function doDork(){
+  const site=document.getElementById('dk-site').value.trim();
+  const kw=document.getElementById('dk-kw').value.trim();
+  const ext=document.getElementById('dk-ext').value.trim();
+  const s=site?`site:${site} `:'';
+  const k=kw?`"${kw}" `:'';
+  const e=ext?`filetype:${ext} `:'';
+  const dorks=[
+    s+k+e,
+    s+`intitle:"${kw||'index of'}"`,
+    s+`inurl:admin ${k}`,
+    s+`inurl:login ${k}`,
+    s+`inurl:wp-admin`,
+    s+`inurl:config ${k}`,
+    s+`inurl:backup ${k}`,
+    s+(ext?`filetype:${ext} `:'filetype:sql ')+k,
+    s+(ext?`filetype:${ext} `:'filetype:env ')+k,
+    s+`intext:"password" ${k}`,
+    s+`intext:"username" "password" ${k}`,
+    s+`intext:"DB_PASSWORD" ${k}`,
+    `cache:${site||'example.com'}`,
+    s+`inurl:phpinfo.php`,
+    s+`intitle:"phpMyAdmin"`,
+    `"${kw||'admin'}" site:${site||'*.com'} -inurl:https`,
+    s+`inurl:".git" -github`,
+    s+`inurl:api key ${k}`,
+    s+`intext:"Error" "SQL" ${k}`,
+    s+`"Index of /" ${k}`,
+  ].filter(d=>d.trim()&&d.trim()!==s.trim());
+  let o='';
+  dorks.slice(0,15).forEach((d,i)=>{
+    o+=`<span class="k">${String(i+1).padStart(2,'0')}  </span><span style="color:var(--c1);cursor:pointer" onclick="window.open('https://www.google.com/search?q='+encodeURIComponent('${d.replace(/'/g,"\\'")}'),'_blank')">${d}</span>\n`;
   });
-  updateNotesCount();
+  showR('dk-r',o);
+  addLog('ok',`${dorks.length} dorks générés pour "${site||kw||'*'}"`);
 }
 
-function loadNote(i) {
-  currentNote = i;
-  document.getElementById('note-title').value = notes[i].title;
-  document.getElementById('note-body').value = notes[i].body;
-  renderNotesList();
+// ═══════════════════════════════
+// CIDR CALCULATOR
+// ═══════════════════════════════
+function doCIDR(){
+  const v=document.getElementById('cidr-i').value.trim();
+  const match=v.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+  if(!match){showR('cidr-r','<span class="e">Format invalide. Exemple: 192.168.1.0/24</span>','c2');return}
+  const [,a,b,c,d,prefix]=match.map(Number);
+  if([a,b,c,d].some(n=>n>255)||prefix>32){showR('cidr-r','<span class="e">Valeurs hors limites.</span>','c2');return}
+  const mask=prefix===0?0:(-1<<(32-prefix))>>>0;
+  const ip=(a<<24|b<<16|c<<8|d)>>>0;
+  const net=(ip&mask)>>>0;
+  const bc=(net|(~mask>>>0))>>>0;
+  const first=(net+1)>>>0;
+  const last=(bc-1)>>>0;
+  const hosts=Math.pow(2,32-prefix)-2;
+  const toIP=n=>`${n>>>24}.${n>>>16&255}.${n>>>8&255}.${n&255}`;
+  const toMask=m=>`${m>>>24}.${m>>>16&255}.${m>>>8&255}.${m&255}`;
+  let o='';
+  o+=r('Réseau',toIP(net),'hl');
+  o+=r('Masque',toMask(mask));
+  o+=r('Wildcard',toMask(~mask>>>0));
+  o+=r('1ère IP',toIP(first),'v');
+  o+=r('Dernière IP',toIP(last),'v');
+  o+=r('Broadcast',toIP(bc),'w');
+  o+=r('Préfixe',`/${prefix}`);
+  o+=r('Hosts utilisables',hosts>=0?hosts.toLocaleString():'0');
+  o+=r('Classe',a<128?'A (0.0.0.0/1)':a<192?'B (128.0.0.0/2)':'C (192.0.0.0/3)');
+  o+=r('Privée',((a===10)||(a===172&&b>=16&&b<=31)||(a===192&&b===168))?'✓ OUI (RFC 1918)':'✗ NON (publique)',((a===10)||(a===172&&b>=16&&b<=31)||(a===192&&b===168))?'v':'w');
+  showR('cidr-r',o,'c2');
+  addLog('ok',`CIDR ${v} → ${hosts.toLocaleString()} hosts | ${toIP(net)} – ${toIP(bc)}`);
 }
 
-function newNote() {
-  currentNote = null;
-  document.getElementById('note-title').value = '';
-  document.getElementById('note-body').value = '';
-  document.querySelectorAll('.note-item').forEach(el => el.classList.remove('active'));
+// ═══════════════════════════════
+// ENCODAGE MULTI
+// ═══════════════════════════════
+function enc(type){
+  const v=document.getElementById('enc-i').value;
+  let result='',label='';
+  try{
+    if(type==='url-enc'){result=encodeURIComponent(v);label='URL Encoded'}
+    else if(type==='url-dec'){result=decodeURIComponent(v);label='URL Decoded'}
+    else if(type==='html-enc'){result=v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');label='HTML Encoded'}
+    else if(type==='html-dec'){const t=document.createElement('textarea');t.innerHTML=v;result=t.value;label='HTML Decoded'}
+    else if(type==='hex-enc'){result=Array.from(v).map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join(' ');label='→ HEX'}
+    else if(type==='hex-dec'){result=v.replace(/\s/g,'').match(/.{2}/g)?.map(h=>String.fromCharCode(parseInt(h,16))).join('')||'';label='HEX →'}
+    else if(type==='bin-enc'){result=Array.from(v).map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');label='→ Binaire'}
+    else if(type==='bin-dec'){result=v.replace(/\s/g,'').match(/.{8}/g)?.map(b=>String.fromCharCode(parseInt(b,2))).join('')||'';label='Binaire →'}
+    else if(type==='rot13'){result=v.replace(/[a-zA-Z]/g,c=>{const b=c<='Z'?65:97;return String.fromCharCode((c.charCodeAt(0)-b+13)%26+b)});label='ROT13'}
+    else if(type==='reverse'){result=v.split('').reverse().join('');label='Inversé'}
+    showR('enc-r',`<span class="k">${label.padEnd(20,' ')} </span><span style="color:var(--c2);word-break:break-all">${result}</span>`);
+    addLog('ok',`Encodage: ${label}`);
+  }catch(e){showR('enc-r',`<span class="e">Erreur : ${e.message}</span>`)}
 }
 
-function saveNote() {
-  const title = document.getElementById('note-title').value.trim() || 'Sans titre';
-  const body = document.getElementById('note-body').value;
-  const now = new Date().toLocaleDateString('fr-FR');
-  if (currentNote !== null) {
-    notes[currentNote] = { title, body, date: now };
-  } else {
-    notes.unshift({ title, body, date: now });
-    currentNote = 0;
-  }
-  localStorage.setItem('osint-notes', JSON.stringify(notes));
-  renderNotesList();
+// ═══════════════════════════════
+// NOTES
+// ═══════════════════════════════
+let notes=JSON.parse(localStorage.getItem('osint-v3')||'[]'),cur=null;
+function saveLS(){localStorage.setItem('osint-v3',JSON.stringify(notes));document.getElementById('dn').textContent=notes.length}
+function renderNotes(){
+  const el=document.getElementById('nlist');el.innerHTML='';
+  if(!notes.length){el.innerHTML='<div style="font-family:var(--mono);font-size:.63rem;color:var(--txt3);padding:.4rem">Aucune note.</div>';saveLS();return}
+  notes.forEach((n,i)=>{
+    const d=document.createElement('div');d.className='nitem'+(i===cur?' active':'');
+    d.innerHTML=`<div class="nitem-t">${n.title||'Sans titre'}</div><div class="nitem-d">${n.date}</div>`;
+    d.onclick=()=>{cur=i;document.getElementById('nt').value=notes[i].title;document.getElementById('nb').value=notes[i].body;renderNotes()};
+    el.appendChild(d);
+  });saveLS();
 }
+function newNote(){cur=null;document.getElementById('nt').value='';document.getElementById('nb').value='';renderNotes()}
+function saveNote(){const t=document.getElementById('nt').value.trim()||'Sans titre',b=document.getElementById('nb').value,date=new Date().toLocaleDateString('fr-FR');
+  if(cur!==null)notes[cur]={title:t,body:b,date};else{notes.unshift({title:t,body:b,date});cur=0}
+  renderNotes();addLog('ok',`Note sauvegardée : "${t}"`)}
+function delNote(){if(cur===null)return;notes.splice(cur,1);cur=null;document.getElementById('nt').value='';document.getElementById('nb').value='';renderNotes()}
+renderNotes();
 
-function deleteNote() {
-  if (currentNote === null) return;
-  notes.splice(currentNote, 1);
-  localStorage.setItem('osint-notes', JSON.stringify(notes));
-  currentNote = null;
-  document.getElementById('note-title').value = '';
-  document.getElementById('note-body').value = '';
-  renderNotesList();
-}
-
-renderNotesList();
-updateNotesCount();
+// ENTER KEY
+const pairs=[['ip-i',doIP],['dns-i',doDNS],['geo-i',doGeo],['who-i',doWHOIS],['em-i',doEmail],['us-i',doUser],['ph-i',doPhone],['hsh-i',doHash],['url-i',doURL],['btc-i',doBTC],['eth-i',doETH],['cidr-i',doCIDR]];
+pairs.forEach(([id,fn])=>{const el=document.getElementById(id);if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')fn()})});
 </script>
 </body>
 </html>
+EOF
+echo "done: $(wc -l < /home/claude/index.html) lignes"
